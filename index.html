@@ -27,20 +27,24 @@
             <h1>Enginius 3D Model Viewer</h1>
             <div class="menu-container">
                 <input type="file" id="fileInput" accept=".fbx,.obj,.gltf,.glb" style="display: none;">
-                <div class="dropdown">
-                    <button id="loadButton" class="dropbtn">Carica Modello</button>
-                    <div class="dropdown-content">
-                        <a href="#" id="uploadModelBtn">Carica File</a>
-                        <a href="#" id="testModelBtn">Modello Test</a>
-                        <a href="#" id="engineModelBtn">Motore V8</a>
+                <!-- Menu semplificati con pulsanti diretti -->
+                <div class="menu-buttons">
+                    <div class="menu-group">
+                        <button id="loadButton" class="menu-btn">Carica Modello</button>
+                        <div class="menu-items" id="loadModelItems">
+                            <button id="uploadModelBtn" class="menu-item">Carica File</button>
+                            <button id="testModelBtn" class="menu-item">Modello Test</button>
+                            <button id="engineModelBtn" class="menu-item">Motore V8</button>
+                            <button id="s3ModelBtn" class="menu-item">Carica da S3</button>
+                        </div>
                     </div>
-                </div>
-                <div class="dropdown">
-                    <button class="dropbtn">Impostazioni</button>
-                    <div class="dropdown-content">
-                        <a href="#" id="resetViewBtn">Reset Vista</a>
-                        <a href="#" id="wireframeBtn">Wireframe</a>
-                        <a href="#" id="fullscreenBtn">Schermo Intero</a>
+                    <div class="menu-group">
+                        <button id="settingsButton" class="menu-btn">Impostazioni</button>
+                        <div class="menu-items" id="settingsItems">
+                            <button id="resetViewBtn" class="menu-item">Reset Vista</button>
+                            <button id="wireframeBtn" class="menu-item">Wireframe</button>
+                            <button id="fullscreenBtn" class="menu-item">Schermo Intero</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -59,6 +63,34 @@
                     <p>Due dita per spostare</p>
                 </div>
                 <div id="object-tooltip" class="hidden"></div>
+                
+                <!-- Dialog per la selezione del modello S3 -->
+                <div id="s3-model-dialog" class="modal hidden">
+                    <div class="modal-content">
+                        <span class="close-button">&times;</span>
+                        <h2>Seleziona un modello da S3</h2>
+                        <p>Bucket: eng-3d-model-test</p>
+                        <div class="s3-model-list">
+                            <div class="s3-model-item" data-model="engine.glb">
+                                <div class="s3-model-name">engine.glb</div>
+                                <button class="s3-model-load-btn">Carica</button>
+                            </div>
+                            <div class="s3-model-item" data-model="car.glb">
+                                <div class="s3-model-name">car.glb</div>
+                                <button class="s3-model-load-btn">Carica</button>
+                            </div>
+                            <div class="s3-model-item" data-model="robot.glb">
+                                <div class="s3-model-name">robot.glb</div>
+                                <button class="s3-model-load-btn">Carica</button>
+                            </div>
+                            <!-- Aggiungi qui altri modelli disponibili nel bucket S3 -->
+                        </div>
+                        <div class="s3-model-custom">
+                            <input type="text" id="s3-model-custom-name" placeholder="Nome file (es: model.glb)">
+                            <button id="s3-model-custom-load-btn">Carica modello personalizzato</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
         

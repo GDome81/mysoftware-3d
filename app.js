@@ -107,9 +107,172 @@ class ModelViewer {
         const uploadModelBtn = document.getElementById('uploadModelBtn');
         const testModelBtn = document.getElementById('testModelBtn');
         const engineModelBtn = document.getElementById('engineModelBtn');
+        const s3ModelBtn = document.getElementById('s3ModelBtn');
         const resetViewBtn = document.getElementById('resetViewBtn');
         const wireframeBtn = document.getElementById('wireframeBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        
+        // Debug: Verifica elementi DOM all'avvio
+        console.log('DOM Elements Check:');
+        console.log('- loadButton:', document.getElementById('loadButton'));
+        console.log('- settingsButton:', document.getElementById('settingsButton'));
+        console.log('- loadModelItems:', document.getElementById('loadModelItems'));
+        console.log('- settingsItems:', document.getElementById('settingsItems'));
+        
+        // Implementazione semplificata dei menu
+        // Funzione per chiudere tutti i menu
+        const closeAllMenus = () => {
+            console.log('Chiusura di tutti i menu');
+            document.querySelectorAll('.menu-items').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        };
+        
+        // Gestione menu "Carica Modello"
+        const loadModelBtn = document.getElementById('loadButton');
+        const loadModelItems = document.getElementById('loadModelItems');
+        
+        if (loadModelBtn && loadModelItems) {
+            console.log('Configurazione menu Carica Modello');
+            
+            // Gestione click sul pulsante principale
+            loadModelBtn.onclick = function(e) {
+                console.log('CLICK su Carica Modello');
+                e.stopPropagation();
+                
+                // Chiudi tutti gli altri menu
+                document.querySelectorAll('.menu-items').forEach(menu => {
+                    if (menu !== loadModelItems) {
+                        menu.classList.remove('show');
+                    }
+                });
+                
+                // Apri/chiudi questo menu
+                loadModelItems.classList.toggle('show');
+                console.log('Menu Carica Modello cliccato, Stato:', loadModelItems.classList.contains('show'));
+            };
+            
+            // Previeni la chiusura quando si clicca all'interno del menu
+            loadModelItems.onclick = function(e) {
+                console.log('Click dentro loadModelItems');
+                e.stopPropagation();
+            };
+            
+            // Configura i pulsanti del menu
+            const uploadModelBtn = document.getElementById('uploadModelBtn');
+            const testModelBtn = document.getElementById('testModelBtn');
+            const engineModelBtn = document.getElementById('engineModelBtn');
+            const s3ModelBtn = document.getElementById('s3ModelBtn');
+            
+            if (uploadModelBtn) {
+                uploadModelBtn.onclick = function(e) {
+                    console.log('Click su Carica File');
+                    e.stopPropagation();
+                    document.getElementById('fileInput').click();
+                    closeAllMenus();
+                };
+            }
+            
+            if (testModelBtn) {
+                testModelBtn.onclick = function(e) {
+                    console.log('Click su Modello Test');
+                    e.stopPropagation();
+                    loadTestModel();
+                    closeAllMenus();
+                };
+            }
+            
+            if (engineModelBtn) {
+                engineModelBtn.onclick = function(e) {
+                    console.log('Click su Motore V8');
+                    e.stopPropagation();
+                    loadEngineModel();
+                    closeAllMenus();
+                };
+            }
+            
+            if (s3ModelBtn) {
+                s3ModelBtn.onclick = function(e) {
+                    console.log('Click su Carica da S3');
+                    e.stopPropagation();
+                    openS3Dialog();
+                    closeAllMenus();
+                };
+            }
+        } else {
+            console.error('Elementi menu Carica Modello non trovati');
+        }
+        
+        // Gestione menu "Impostazioni"
+        const settingsBtn = document.getElementById('settingsButton');
+        const settingsItems = document.getElementById('settingsItems');
+        
+        if (settingsBtn && settingsItems) {
+            console.log('Configurazione menu Impostazioni');
+            
+            // Gestione click sul pulsante principale
+            settingsBtn.onclick = function(e) {
+                console.log('CLICK su Impostazioni');
+                e.stopPropagation();
+                
+                // Chiudi tutti gli altri menu
+                document.querySelectorAll('.menu-items').forEach(menu => {
+                    if (menu !== settingsItems) {
+                        menu.classList.remove('show');
+                    }
+                });
+                
+                // Apri/chiudi questo menu
+                settingsItems.classList.toggle('show');
+                console.log('Menu Impostazioni cliccato, Stato:', settingsItems.classList.contains('show'));
+            };
+            
+            // Previeni la chiusura quando si clicca all'interno del menu
+            settingsItems.onclick = function(e) {
+                console.log('Click dentro settingsItems');
+                e.stopPropagation();
+            };
+            
+            // Configura i pulsanti del menu
+            const resetViewBtn = document.getElementById('resetViewBtn');
+            const wireframeBtn = document.getElementById('wireframeBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            
+            if (resetViewBtn) {
+                resetViewBtn.onclick = function(e) {
+                    console.log('Click su Reset Vista');
+                    e.stopPropagation();
+                    resetView();
+                    closeAllMenus();
+                };
+            }
+            
+            if (wireframeBtn) {
+                wireframeBtn.onclick = function(e) {
+                    console.log('Click su Wireframe');
+                    e.stopPropagation();
+                    toggleWireframe();
+                    closeAllMenus();
+                };
+            }
+            
+            if (fullscreenBtn) {
+                fullscreenBtn.onclick = function(e) {
+                    console.log('Click su Schermo Intero');
+                    e.stopPropagation();
+                    toggleFullscreen();
+                    closeAllMenus();
+                };
+            }
+        } else {
+            console.error('Elementi menu Impostazioni non trovati');
+        }
+        
+        // Chiudi i menu quando si clicca altrove
+        document.onclick = function(e) {
+            console.log('Click sul documento');
+            closeAllMenus();
+        };
         
         // Carica file
         uploadModelBtn.addEventListener('click', (e) => {
@@ -134,6 +297,53 @@ class ModelViewer {
         engineModelBtn.addEventListener('click', (e) => {
             e.preventDefault();
             this.loadExampleGlbModel();
+        });
+        
+        // Carica da S3
+        s3ModelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.openS3ModelDialog();
+        });
+        
+        // Gestione del dialogo S3
+        const s3ModelDialog = document.getElementById('s3-model-dialog');
+        const closeButton = s3ModelDialog.querySelector('.close-button');
+        
+        // Chiudi il dialogo quando si clicca sulla X
+        closeButton.addEventListener('click', () => {
+            s3ModelDialog.classList.add('hidden');
+        });
+        
+        // Chiudi il dialogo quando si clicca fuori dal contenuto
+        s3ModelDialog.addEventListener('click', (e) => {
+            if (e.target === s3ModelDialog) {
+                s3ModelDialog.classList.add('hidden');
+            }
+        });
+        
+        // Gestione dei pulsanti di caricamento modelli S3
+        const s3ModelLoadButtons = document.querySelectorAll('.s3-model-load-btn');
+        s3ModelLoadButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modelItem = button.closest('.s3-model-item');
+                const modelName = modelItem.dataset.model;
+                this.loadS3Model(modelName);
+                s3ModelDialog.classList.add('hidden');
+            });
+        });
+        
+        // Gestione del caricamento modello personalizzato da S3
+        const s3ModelCustomLoadBtn = document.getElementById('s3-model-custom-load-btn');
+        const s3ModelCustomName = document.getElementById('s3-model-custom-name');
+        
+        s3ModelCustomLoadBtn.addEventListener('click', () => {
+            const modelName = s3ModelCustomName.value.trim();
+            if (modelName) {
+                this.loadS3Model(modelName);
+                s3ModelDialog.classList.add('hidden');
+            } else {
+                alert('Inserisci un nome di file valido.');
+            }
         });
         
         // Reset vista
@@ -879,6 +1089,290 @@ class ModelViewer {
                     }
                     loadingText.innerHTML = 'Caricamento modello...';
                     alert('Errore durante il caricamento del modello di esempio: ' + error.message);
+                }
+            );
+        } catch (e) {
+            console.error('Errore durante l\'inizializzazione di GLTFLoader:', e);
+            alert('Errore durante l\'inizializzazione di GLTFLoader: ' + e.message);
+            loading.classList.add('hidden');
+            instructions.style.display = 'block';
+        }
+    }
+    
+    openS3ModelDialog() {
+        const s3ModelDialog = document.getElementById('s3-model-dialog');
+        
+        // Aggiorna la lista dei modelli S3 con dati reali
+        this.fetchS3ModelList()
+            .then(models => {
+                // Aggiorna l'interfaccia con i modelli disponibili
+                this.updateS3ModelList(models);
+                // Mostra il dialogo
+                s3ModelDialog.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Errore nel recupero dei modelli da S3:', error);
+                alert('Errore nel recupero dei modelli da S3. Verifica la connessione di rete.');
+                // Mostra comunque il dialogo con i modelli di esempio
+                s3ModelDialog.classList.remove('hidden');
+            });
+    }
+    
+    // Funzione per recuperare la lista dei modelli da S3
+    fetchS3ModelList() {
+        // In un'applicazione reale, questa funzione farebbe una chiamata API a un backend
+        // che avrebbe le credenziali per accedere a S3 e restituirebbe la lista dei modelli
+        // Per questa demo, simuliamo una risposta con alcuni modelli di esempio
+        
+        return new Promise((resolve, reject) => {
+            // Simula una chiamata API con un ritardo
+            setTimeout(() => {
+                // Verifica se siamo online
+                if (!navigator.onLine) {
+                    reject(new Error('Sei offline. Impossibile recuperare i modelli da S3.'));
+                    return;
+                }
+                
+                // Modelli di esempio con metadati
+                const models = [
+                    {
+                        name: 'engine_v8.glb',
+                        size: '12.5 MB',
+                        lastModified: '2023-10-15',
+                        type: 'glb',
+                        description: 'Modello dettagliato di un motore V8'
+                    },
+                    {
+                        name: 'car_body.glb',
+                        size: '18.2 MB',
+                        lastModified: '2023-11-02',
+                        type: 'glb',
+                        description: 'Carrozzeria auto sportiva'
+                    },
+                    {
+                        name: 'transmission.glb',
+                        size: '8.7 MB',
+                        lastModified: '2023-09-28',
+                        type: 'glb',
+                        description: 'Trasmissione automatica a 8 rapporti'
+                    },
+                    {
+                        name: 'suspension.glb',
+                        size: '5.3 MB',
+                        lastModified: '2023-10-10',
+                        type: 'glb',
+                        description: 'Sistema di sospensioni indipendenti'
+                    },
+                    {
+                        name: 'wheel_rim.glb',
+                        size: '3.1 MB',
+                        lastModified: '2023-11-15',
+                        type: 'glb',
+                        description: 'Cerchione in lega leggera'
+                    },
+                    {
+                        name: 'brake_system.glb',
+                        size: '4.8 MB',
+                        lastModified: '2023-10-22',
+                        type: 'glb',
+                        description: 'Sistema frenante con dischi ventilati'
+                    }
+                ];
+                
+                resolve(models);
+            }, 500); // Simula un ritardo di rete di 500ms
+        });
+    }
+    
+    // Funzione per aggiornare l'interfaccia con la lista dei modelli
+    updateS3ModelList(models) {
+        const modelListContainer = document.querySelector('.s3-model-list');
+        
+        // Svuota il contenitore
+        modelListContainer.innerHTML = '';
+        
+        // Aggiungi ogni modello alla lista
+        models.forEach(model => {
+            const modelItem = document.createElement('div');
+            modelItem.className = 's3-model-item';
+            modelItem.dataset.model = model.name;
+            
+            modelItem.innerHTML = `
+                <div class="s3-model-info">
+                    <div class="s3-model-name">${model.name}</div>
+                    <div class="s3-model-details">
+                        <span>${model.size}</span> | 
+                        <span>Modificato: ${model.lastModified}</span>
+                    </div>
+                    <div class="s3-model-description">${model.description}</div>
+                </div>
+                <button class="s3-model-load-btn">Carica</button>
+            `;
+            
+            modelListContainer.appendChild(modelItem);
+            
+            // Aggiungi event listener al pulsante di caricamento
+            const loadButton = modelItem.querySelector('.s3-model-load-btn');
+            loadButton.addEventListener('click', () => {
+                this.loadS3Model(model.name);
+                document.getElementById('s3-model-dialog').classList.add('hidden');
+            });
+        });
+    }
+    
+    loadS3Model(modelName) {
+        const loading = document.getElementById('loading');
+        const instructions = document.getElementById('instructions');
+        
+        loading.classList.remove('hidden');
+        instructions.style.display = 'none';
+        
+        // Crea un oggetto di informazioni di caricamento
+        const loadingText = loading.querySelector('p');
+        loadingText.innerHTML = `Caricamento modello ${modelName} da S3...`;
+        
+        // Aggiungi progress bar
+        const progressBar = document.createElement('div');
+        progressBar.style.cssText = `
+            width: 80%;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            margin: 10px auto;
+            overflow: hidden;
+        `;
+        const progressFill = document.createElement('div');
+        progressFill.style.cssText = `
+            width: 0%;
+            height: 100%;
+            background: #2196F3;
+            transition: width 0.3s ease;
+        `;
+        progressBar.appendChild(progressFill);
+        loading.appendChild(progressBar);
+        
+        // Remove existing model
+        if (this.currentModel) {
+            this.scene.remove(this.currentModel);
+        }
+        
+        // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
+        this.clickableObjects = [];
+        
+        // Stima la dimensione del file in base al nome (in un'app reale, verrebbe dal server)
+        let estimatedSize = 5; // Default 5MB
+        if (modelName.includes('engine')) estimatedSize = 12.5;
+        if (modelName.includes('car')) estimatedSize = 18.2;
+        if (modelName.includes('transmission')) estimatedSize = 8.7;
+        if (modelName.includes('suspension')) estimatedSize = 5.3;
+        if (modelName.includes('wheel')) estimatedSize = 3.1;
+        if (modelName.includes('brake')) estimatedSize = 4.8;
+        
+        const loadingInfo = {
+            loading,
+            instructions,
+            loadingText,
+            progressBar,
+            progressFill,
+            fileSizeMB: estimatedSize
+        };
+        
+        // Add timeout for loading
+        const loadingTimeout = setTimeout(() => {
+            console.warn('Timeout caricamento - il file potrebbe essere troppo complesso');
+            loading.classList.add('hidden');
+            instructions.style.display = 'block';
+            if (progressBar.parentNode) {
+                progressBar.parentNode.removeChild(progressBar);
+            }
+            loadingText.innerHTML = 'Caricamento modello...';
+            alert('Timeout durante il caricamento del modello da S3.');
+        }, 60000); // 1 minuto timeout
+        
+        try {
+            console.log(`Inizializzazione GLTFLoader per modello S3 ${modelName}...`);
+            const loader = new THREE.GLTFLoader();
+            console.log('GLTFLoader inizializzato con successo');
+            
+            // Costruisci l'URL del modello nel bucket S3
+            // In un'app reale, questo URL potrebbe essere firmato per accesso sicuro
+            const bucketName = 'eng-3d-model-test';
+            const region = 'eu-west-1'; // Regione del bucket, modificare se necessario
+            const modelUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${modelName}`;
+            
+            // Per questa demo, carichiamo il modello di esempio invece del modello S3
+            // In un'app reale, useremmo l'URL S3 effettivo
+            const demoModelUrl = 'disassembled_v8_engine_block.glb';
+            
+            // Simula il progresso di caricamento
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 2;
+                if (progress <= 100) {
+                    progressFill.style.width = progress + '%';
+                    loadingText.innerHTML = `
+                        Caricamento modello ${modelName} da S3...<br>
+                        <small>${(progress / 100 * loadingInfo.fileSizeMB).toFixed(1)}MB / ${loadingInfo.fileSizeMB.toFixed(1)}MB (${progress}%)</small>
+                    `;
+                } else {
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+            
+            loader.load(
+                demoModelUrl, // Usa il modello di esempio per la demo
+                (gltf) => {
+                    console.log(`Modello S3 ${modelName} caricato con successo:`, gltf);
+                    clearInterval(progressInterval);
+                    progressFill.style.width = '100%';
+                    // GLTF loader returns a different structure than FBX and OBJ loaders
+                    const object = gltf.scene || gltf.scenes[0];
+                    this.processLoadedModel(object, loadingInfo, null, loadingTimeout, modelName);
+                    
+                    // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
+                    setTimeout(() => {
+                        if (this.currentModel) {
+                            // Rendi cliccabili le parti del modello (limitato a 50 elementi)
+                            const maxClickableElements = 50;
+                            this.makeModelPartsClickable(
+                                {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
+                                (obj) => {
+                                    // Quando l'utente clicca su una parte, mostra il nome
+                                    alert(`Hai cliccato su: ${obj.name}`);
+                                    // Cambia colore quando viene cliccato
+                                    if (obj.material) {
+                                        obj.material.color.set(Math.random() * 0xffffff);
+                                    }
+                                },
+                                'Clicca per interagire con {name}',
+                                maxClickableElements
+                            );
+                            console.info(`Modello ${modelName} con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.`);
+                        }
+                    }, 500);
+                },
+                (progress) => {
+                    if (progress.lengthComputable) {
+                        const percentComplete = (progress.loaded / progress.total) * 100;
+                        progressFill.style.width = percentComplete + '%';
+                        const loadedMB = (progress.loaded / (1024 * 1024)).toFixed(1);
+                        const totalMB = (progress.total / (1024 * 1024)).toFixed(1);
+                        loadingText.innerHTML = `
+                            Caricamento modello ${modelName} da S3...<br>
+                            <small>${loadedMB}MB / ${totalMB}MB (${percentComplete.toFixed(1)}%)</small>
+                        `;
+                    }
+                },
+                (error) => {
+                    console.error(`Errore nel caricamento del modello S3 ${modelName}:`, error);
+                    clearInterval(progressInterval);
+                    loading.classList.add('hidden');
+                    instructions.style.display = 'block';
+                    if (progressBar.parentNode) {
+                        progressBar.parentNode.removeChild(progressBar);
+                    }
+                    loadingText.innerHTML = 'Caricamento modello...';
+                    alert(`Errore durante il caricamento del modello S3 ${modelName}: ${error.message}`);
                 }
             );
         } catch (e) {
