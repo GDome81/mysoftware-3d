@@ -860,9 +860,11 @@ class ModelViewer {
                 this.renderer.shadowMap.enabled = false;
                 this.lowQualityRendering = true;
                 
-                // Implementa LOD per modelli critici
-                console.log('Implementando Level of Detail (LOD) per modello critico...');
-                this.setupSimpleLOD(object);
+                // Implementa LOD per modelli critici (solo se le ottimizzazioni aggressive sono abilitate)
+                if (this.aggressiveOptimizationsEnabled) {
+                    console.log('Implementando Level of Detail (LOD) per modello critico...');
+                    this.setupSimpleLOD(object);
+                }
             }
             
             // Enable shadows and prepare for clickable objects
@@ -1760,8 +1762,10 @@ class ModelViewer {
                 }
             });
             
-            // Implementa LOD per modelli critici
-            this.setupSimpleLOD(this.currentModel);
+            // Implementa LOD per modelli critici (solo se le ottimizzazioni aggressive sono abilitate)
+            if (this.aggressiveOptimizationsEnabled) {
+                this.setupSimpleLOD(this.currentModel);
+            }
             
             // Riduci la risoluzione del renderer
             this.renderer.setSize(
@@ -2133,8 +2137,8 @@ class ModelViewer {
             }
         }
         
-        // Ottimizzazione dinamica del frustum culling per modelli grandi
-        if (this.currentModel && this.modelSizeMB > 100) {
+        // Ottimizzazione dinamica del frustum culling per modelli grandi (solo se le ottimizzazioni aggressive sono abilitate)
+        if (this.currentModel && this.modelSizeMB > 100 && this.aggressiveOptimizationsEnabled) {
             // Aggiorna la matrice di frustum della camera
             this.camera.updateMatrixWorld();
             const frustum = new THREE.Frustum();
@@ -2192,6 +2196,13 @@ class ModelViewer {
                             }
                         }
                     }
+                }
+            });
+        } else if (this.currentModel && !this.aggressiveOptimizationsEnabled) {
+            // Se le ottimizzazioni aggressive sono disabilitate, assicurati che tutti gli oggetti siano visibili
+            this.currentModel.traverse(child => {
+                if (child.isMesh && !child.visible) {
+                    child.visible = true;
                 }
             });
         }
