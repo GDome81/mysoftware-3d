@@ -37,6 +37,7 @@ Una Progressive Web App (PWA) per visualizzare modelli 3D in formato FBX, OBJ e 
 
 - **Three.js**: Libreria 3D per WebGL
 - **Loaders**: Supporto per modelli FBX, OBJ e GLTF/GLB
+- **DRACOLoader**: Compressione avanzata per modelli GLTF/GLB ottimizzata per mobile
 - **OrbitControls**: Controlli di navigazione 3D ottimizzati per touch
 - **Raycasting**: Per l'interazione con oggetti cliccabili
 - **Service Worker**: Cache avanzata e funzionalità offline
@@ -83,8 +84,11 @@ Una Progressive Web App (PWA) per visualizzare modelli 3D in formato FBX, OBJ e 
 
 ## Formati Supportati
 
-- **FBX**: Formato principale supportato
-- **Texture**: Supportate automaticamente se incluse nel file FBX
+- **FBX**: Formato supportato per modelli 3D complessi
+- **OBJ**: Formato supportato per modelli 3D semplici
+- **GLTF/GLB**: Formato supportato con ottimizzazione Draco per prestazioni migliori su mobile
+- **Draco**: Supporto per modelli GLTF/GLB compressi con Draco per ridurre le dimensioni e migliorare le prestazioni
+- **Texture**: Supportate automaticamente se incluse nei file
 - **Animazioni**: Rilevate automaticamente (se presenti nel modello)
 
 ## Compatibilità
@@ -97,12 +101,14 @@ Una Progressive Web App (PWA) per visualizzare modelli 3D in formato FBX, OBJ e 
 
 - **Modelli Consigliati**: Fino a 100k poligoni per prestazioni ottimali su mobile
 - **Texture**: Risoluzione massima consigliata 2048x2048
+- **Compressione Draco**: Supporto per modelli GLTF/GLB compressi con Draco per ridurre le dimensioni dei file fino all'85% e migliorare le prestazioni di caricamento su dispositivi mobili
+- **Decoder WebAssembly**: Utilizzo di decoder WebAssembly per decompressione Draco più veloce su dispositivi mobili
 - **Cache**: I file vengono memorizzati nella cache per accesso offline
 
 ## Risoluzione Problemi
 
 ### Il modello non si carica
-- Verifica che il file sia in formato .fbx valido
+- Verifica che il file sia in formato valido (FBX, OBJ, GLTF o GLB)
 - Controlla che il file non sia troppo grande (>50MB)
 - Assicurati che il browser supporti WebGL
 
@@ -110,6 +116,13 @@ Una Progressive Web App (PWA) per visualizzare modelli 3D in formato FBX, OBJ e 
 - Riduci la complessità del modello
 - Ottimizza le texture
 - Chiudi altre applicazioni per liberare memoria
+- Utilizza modelli GLTF/GLB compressi con Draco per migliorare le prestazioni
+
+### Problemi con la compressione Draco
+- Assicurati che il modello sia stato compresso correttamente con Draco
+- Verifica che il browser supporti WebAssembly per prestazioni ottimali
+- Se il decoder non si carica, l'app utilizzerà automaticamente un fallback non ottimizzato
+- Per comprimere i tuoi modelli con Draco, puoi utilizzare strumenti come gltfpack o il plugin Blender
 
 ### L'app non si installa
 - Verifica che il browser supporti le PWA

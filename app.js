@@ -1005,9 +1005,19 @@ class ModelViewer {
         }, 120000); // 2 minuti timeout
         
         try {
-            console.log('Inizializzazione GLTFLoader...');
+            console.log('Inizializzazione GLTFLoader con DRACOLoader...');
             const loader = new THREE.GLTFLoader();
-            console.log('GLTFLoader inizializzato con successo');
+            
+            // Configurazione DRACOLoader per ottimizzazione mobile
+            const dracoLoader = new THREE.DRACOLoader();
+            // Imposta il percorso per i file del decoder Draco
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+            // Usa WebAssembly di default per prestazioni migliori
+            dracoLoader.setDecoderConfig({ type: 'wasm' });
+            // Collega DRACOLoader a GLTFLoader
+            loader.setDRACOLoader(dracoLoader);
+            
+            console.log('GLTFLoader con DRACOLoader inizializzato con successo');
             
             loader.load(
                 url,
@@ -1017,11 +1027,15 @@ class ModelViewer {
                     const object = gltf.scene || gltf.scenes[0];
                     console.log('Oggetto estratto da gltf:', object);
                     this.processLoadedModel(object, loadingInfo, url, loadingTimeout, 'GLTF/GLB');
+                    // Rilascia la memoria del decoder quando non è più necessario
+                    dracoLoader.dispose();
                 },
                 (progress) => this.handleLoadingProgress(progress, loadingInfo),
                 (error) => {
                     console.error('Errore specifico GLTFLoader:', error);
                     this.handleLoadingError(error, loadingInfo, url, loadingTimeout, 'GLTF/GLB');
+                    // Rilascia la memoria del decoder in caso di errore
+                    dracoLoader.dispose();
                 }
             );
         } catch (e) {
@@ -1093,9 +1107,19 @@ class ModelViewer {
         }, 60000); // 1 minuto timeout
         
         try {
-            console.log('Inizializzazione GLTFLoader per modello di esempio...');
+            console.log('Inizializzazione GLTFLoader con DRACOLoader per modello di esempio...');
             const loader = new THREE.GLTFLoader();
-            console.log('GLTFLoader inizializzato con successo');
+            
+            // Configurazione DRACOLoader per ottimizzazione mobile
+            const dracoLoader = new THREE.DRACOLoader();
+            // Imposta il percorso per i file del decoder Draco
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+            // Usa WebAssembly di default per prestazioni migliori
+            dracoLoader.setDecoderConfig({ type: 'wasm' });
+            // Collega DRACOLoader a GLTFLoader
+            loader.setDRACOLoader(dracoLoader);
+            
+            console.log('GLTFLoader con DRACOLoader inizializzato con successo');
             
             // Simula il progresso di caricamento
             let progress = 0;
@@ -1121,6 +1145,8 @@ class ModelViewer {
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
                     this.processLoadedModel(object, loadingInfo, null, loadingTimeout, 'Motore V8');
+                    // Rilascia la memoria del decoder quando non è più necessario
+                    dracoLoader.dispose();
                     
                     // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
                     setTimeout(() => {
@@ -1197,67 +1223,75 @@ class ModelViewer {
     
     // Funzione per recuperare la lista dei modelli da S3
     fetchS3ModelList() {
-        // In un'applicazione reale, questa funzione farebbe una chiamata API a un backend
-        // che avrebbe le credenziali per accedere a S3 e restituirebbe la lista dei modelli
-        // Per questa demo, simuliamo una risposta con alcuni modelli di esempio
-        
+        // Recupera la lista dei modelli dal bucket S3 pubblico
         return new Promise((resolve, reject) => {
-            // Simula una chiamata API con un ritardo
-            setTimeout(() => {
-                // Verifica se siamo online
-                if (!navigator.onLine) {
-                    reject(new Error('Sei offline. Impossibile recuperare i modelli da S3.'));
-                    return;
-                }
-                
-                // Modelli di esempio con metadati
-                const models = [
-                    {
-                        name: 'engine_v8.glb',
-                        size: '12.5 MB',
-                        lastModified: '2023-10-15',
-                        type: 'glb',
-                        description: 'Modello dettagliato di un motore V8'
-                    },
-                    {
-                        name: 'car_body.glb',
-                        size: '18.2 MB',
-                        lastModified: '2023-11-02',
-                        type: 'glb',
-                        description: 'Carrozzeria auto sportiva'
-                    },
-                    {
-                        name: 'transmission.glb',
-                        size: '8.7 MB',
-                        lastModified: '2023-09-28',
-                        type: 'glb',
-                        description: 'Trasmissione automatica a 8 rapporti'
-                    },
-                    {
-                        name: 'suspension.glb',
-                        size: '5.3 MB',
-                        lastModified: '2023-10-10',
-                        type: 'glb',
-                        description: 'Sistema di sospensioni indipendenti'
-                    },
-                    {
-                        name: 'wheel_rim.glb',
-                        size: '3.1 MB',
-                        lastModified: '2023-11-15',
-                        type: 'glb',
-                        description: 'Cerchione in lega leggera'
-                    },
-                    {
-                        name: 'brake_system.glb',
-                        size: '4.8 MB',
-                        lastModified: '2023-10-22',
-                        type: 'glb',
-                        description: 'Sistema frenante con dischi ventilati'
+            // Verifica se siamo online
+            if (!navigator.onLine) {
+                reject(new Error('Sei offline. Impossibile recuperare i modelli da S3.'));
+                return;
+            }
+            
+            console.log('Recupero modelli dal bucket S3 pubblico');
+            
+            // Bucket S3 pubblico e regione
+            const bucketName = 'eng-3d-model-test';
+            const region = 'eu-west-1';
+            const bucketUrl = `https://${bucketName}.s3.${region}.amazonaws.com`;
+            
+            // Effettua una richiesta per ottenere la lista degli oggetti nel bucket
+            fetch(`${bucketUrl}?list-type=2`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Errore nella richiesta: ${response.status} ${response.statusText}`);
                     }
-                ];
-                
-                resolve(models);
-            }, 500); // Simula un ritardo di rete di 500ms
+                    return response.text();
+                })
+                .then(data => {
+                    // Analizza la risposta XML
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(data, 'text/xml');
+                    
+                    // Estrai le informazioni sui modelli
+                    const contents = xmlDoc.getElementsByTagName('Contents');
+                    const models = [];
+                    
+                    for (let i = 0; i < contents.length; i++) {
+                        const key = contents[i].getElementsByTagName('Key')[0].textContent;
+                        
+                        // Filtra solo i file .glb
+                        if (key.endsWith('.glb')) {
+                            const size = parseInt(contents[i].getElementsByTagName('Size')[0].textContent);
+                            const lastModified = new Date(contents[i].getElementsByTagName('LastModified')[0].textContent);
+                            
+                            // Formatta le informazioni
+                            const sizeMB = (size / (1024 * 1024)).toFixed(1);
+                            const formattedDate = lastModified.toISOString().split('T')[0];
+                            
+                            // Crea una descrizione basata sul nome del file
+                            let description = 'Modello 3D';
+                            if (key.includes('engine')) description = 'Modello dettagliato di un motore';
+                            if (key.includes('car')) description = 'Modello di automobile';
+                            if (key.includes('transmission')) description = 'Modello di trasmissione';
+                            if (key.includes('suspension')) description = 'Sistema di sospensioni';
+                            if (key.includes('wheel')) description = 'Modello di ruota o cerchione';
+                            if (key.includes('brake')) description = 'Sistema frenante';
+                            
+                            models.push({
+                                name: key,
+                                size: `${sizeMB} MB`,
+                                lastModified: formattedDate,
+                                type: 'glb',
+                                description: description
+                            });
+                        }
+                    }
+                    
+                    resolve(models);
+                })
+                .catch(error => {
+                    console.error('Errore nel recupero dei modelli da S3:', error);
+                    reject(error);
+                });
         });
     }
     
@@ -1367,44 +1401,43 @@ class ModelViewer {
         }, 60000); // 1 minuto timeout
         
         try {
-            console.log(`Inizializzazione GLTFLoader per modello S3 ${modelName}...`);
+            console.log(`Inizializzazione GLTFLoader con DRACOLoader per modello S3 ${modelName}...`);
             const loader = new THREE.GLTFLoader();
-            console.log('GLTFLoader inizializzato con successo');
             
-            // Costruisci l'URL del modello nel bucket S3
-            // In un'app reale, questo URL potrebbe essere firmato per accesso sicuro
+            // Configurazione DRACOLoader per ottimizzazione mobile
+            const dracoLoader = new THREE.DRACOLoader();
+            // Imposta il percorso per i file del decoder Draco
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+            // Usa WebAssembly di default per prestazioni migliori
+            dracoLoader.setDecoderConfig({ type: 'wasm' });
+            // Collega DRACOLoader a GLTFLoader
+            loader.setDRACOLoader(dracoLoader);
+            
+            console.log('GLTFLoader con DRACOLoader inizializzato con successo');
+            
+            // Costruisci l'URL del modello nel bucket S3 pubblico
+            console.log(`Tentativo di caricamento del modello ${modelName} dal bucket S3 pubblico`);
             const bucketName = 'eng-3d-model-test';
-            const region = 'eu-west-1'; // Regione del bucket, modificare se necessario
+            const region = 'eu-west-1';
             const modelUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${modelName}`;
             
-            // Per questa demo, carichiamo il modello di esempio invece del modello S3
-            // In un'app reale, useremmo l'URL S3 effettivo
-            const demoModelUrl = 'disassembled_v8_engine_block.glb';
-            
-            // Simula il progresso di caricamento
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += 2;
-                if (progress <= 100) {
-                    progressFill.style.width = progress + '%';
-                    loadingText.innerHTML = `
-                        Caricamento modello ${modelName} da S3...<br>
-                        <small>${(progress / 100 * loadingInfo.fileSizeMB).toFixed(1)}MB / ${loadingInfo.fileSizeMB.toFixed(1)}MB (${progress}%)</small>
-                    `;
-                } else {
-                    clearInterval(progressInterval);
-                }
-            }, 100);
+            // Inizializza il progresso di caricamento
+            progressFill.style.width = '0%';
+            loadingText.innerHTML = `
+                Caricamento modello ${modelName} da S3...<br>
+                <small>Connessione al server...</small>
+            `;
             
             loader.load(
-                demoModelUrl, // Usa il modello di esempio per la demo
+                modelUrl, // Usa l'URL del bucket S3 pubblico
                 (gltf) => {
                     console.log(`Modello S3 ${modelName} caricato con successo:`, gltf);
-                    clearInterval(progressInterval);
                     progressFill.style.width = '100%';
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
                     this.processLoadedModel(object, loadingInfo, null, loadingTimeout, modelName);
+                    // Rilascia la memoria del decoder quando non è più necessario
+                    dracoLoader.dispose();
                     
                     // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
                     setTimeout(() => {
@@ -1442,7 +1475,6 @@ class ModelViewer {
                 },
                 (error) => {
                     console.error(`Errore nel caricamento del modello S3 ${modelName}:`, error);
-                    clearInterval(progressInterval);
                     loading.classList.add('hidden');
                     instructions.style.display = 'block';
                     if (progressBar.parentNode) {
@@ -1450,6 +1482,8 @@ class ModelViewer {
                     }
                     loadingText.innerHTML = 'Caricamento modello...';
                     alert(`Errore durante il caricamento del modello S3 ${modelName}: ${error.message}`);
+                    // Rilascia la memoria del decoder in caso di errore
+                    dracoLoader.dispose();
                 }
             );
         } catch (e) {

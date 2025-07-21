@@ -96,6 +96,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
         // Fallback per FBXLoader se non carica
@@ -128,6 +129,18 @@
                 this.load = function(url, onLoad, onProgress, onError) {
                     if (onError) onError(new Error('GLTFLoader non disponibile. Usa un file di test o verifica la connessione.'));
                 };
+                this.setDRACOLoader = function() {}; // Metodo vuoto per compatibilità
+            };
+        }
+        
+        // Fallback per DRACOLoader se non carica
+        if (typeof THREE.DRACOLoader === 'undefined') {
+            console.warn('DRACOLoader non disponibile, caricamento alternativo...');
+            // Implementazione fallback per test
+            THREE.DRACOLoader = function() {
+                this.setDecoderPath = function() { return this; };
+                this.setDecoderConfig = function() { return this; };
+                this.dispose = function() {};
             };
         }
     </script>
