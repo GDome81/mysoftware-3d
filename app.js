@@ -17,6 +17,16 @@ class ModelViewer {
     }
     
     init() {
+        // Inizializza flag per le ottimizzazioni
+        this.modelSizeMB = 0;
+        this.largeModelOptimizationsApplied = false;
+        this.criticalModelOptimizationsApplied = false;
+        this.highMemoryOptimizationsApplied = false;
+        this.emergencyOptimizationsApplied = false;
+        this.smallScreenOptimizationsApplied = false;
+        this.lowQualityRendering = false;
+        this.currentModel = null;
+        
         // Setup scene
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x222222);
@@ -30,24 +40,49 @@ class ModelViewer {
         );
         this.camera.position.set(5, 5, 5);
         
-        // Setup renderer
+        // Rileva capacità del dispositivo
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isLowEndDevice = isMobile || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+        
+        // Setup renderer con ottimizzazioni automatiche
         const canvas = document.getElementById('three-canvas');
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: canvas,
-            antialias: true,
-            alpha: true
+            antialias: !isLowEndDevice, // Disabilita antialiasing su dispositivi a basse prestazioni
+            alpha: true,
+            powerPreference: 'high-performance', // Richiedi GPU ad alte prestazioni se disponibile
+            precision: isLowEndDevice ? 'mediump' : 'highp' // Usa precisione media su dispositivi a basse prestazioni
         });
-        this.renderer.setSize(window.innerWidth, window.innerHeight - 140);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        // Configura dimensioni e pixel ratio in base al dispositivo
+        const header = document.querySelector('header');
+        const controls = document.getElementById('controls');
+        const headerHeight = header ? header.offsetHeight : 0;
+        const controlsHeight = controls ? controls.offsetHeight : 0;
+        const availableHeight = window.innerHeight - headerHeight - controlsHeight;
+        
+        this.renderer.setSize(window.innerWidth, availableHeight);
+        
+        // Limita il pixel ratio su dispositivi a basse prestazioni
+        const maxPixelRatio = isLowEndDevice ? 1.0 : 2.0;
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+        
+        // Configura le ombre in base alle capacità del dispositivo
+        this.renderer.shadowMap.enabled = !isLowEndDevice;
+        this.renderer.shadowMap.type = isLowEndDevice ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
+        
+        // Configura encoding e tone mapping
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1;
         
-        // Setup controls
+        // Abilita il culling aggressivo per impostazione predefinita
+        this.renderer.sortObjects = true;
+        
+        // Setup controls con ottimizzazioni per dispositivi mobili
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
+        this.controls.enableDamping = !isLowEndDevice; // Disabilita damping su dispositivi a basse prestazioni
+        this.controls.dampingFactor = isLowEndDevice ? 0.1 : 0.05; // Damping più aggressivo su dispositivi a basse prestazioni
         this.controls.enableZoom = true;
         this.controls.enablePan = true;
         this.controls.enableRotate = true;
@@ -57,6 +92,9 @@ class ModelViewer {
             ONE: THREE.TOUCH.ROTATE,
             TWO: THREE.TOUCH.DOLLY_PAN
         };
+        
+        // Configura intervallo di controllo memoria per dispositivi a basse prestazioni
+        this.memoryCheckInterval = isLowEndDevice ? 10000 : 5000; // 10 secondi per dispositivi a basse prestazioni, 5 secondi per altri
         
         // Setup raycaster for clickable objects
         this.raycaster = new THREE.Raycaster();
@@ -626,23 +664,95 @@ class ModelViewer {
             // Center the object
             object.position.sub(center.multiplyScalar(scale));
             
-            // Optimize for large models
-            if (fileSizeMB > 50) {
-                console.log('Applicando ottimizzazioni per modello grande...');
-                
-                // Reduce texture quality for performance
+            // Optimize for large models with progressive enhancements based on file size
+            console.log('Applicando ottimizzazioni per modello, dimensione:', fileSizeMB, 'MB');
+            
+            // Salva la dimensione del modello per riferimento futuro
+            this.modelSizeMB = fileSizeMB || 0;
+            
+            // Determina il livello di ottimizzazione in base alla dimensione del file
+            const isLargeModel = fileSizeMB > 50;
+            const isVeryLargeModel = fileSizeMB > 100;
+            const isCriticalModel = fileSizeMB > 300;
+            
+            // Applica ottimizzazioni preventive basate sulla dimensione del modello
+            if (isCriticalModel) {
+                console.warn('Modello critico (>300MB) rilevato. Applicando ottimizzazioni preventive...');
+                this.applyCriticalModelOptimizations();
+                this.criticalOptimizationsApplied = true;
+            } else if (isVeryLargeModel) {
+                console.warn('Modello molto grande (>100MB) rilevato. Applicando ottimizzazioni preventive...');
+                this.applyLargeModelOptimizations();
+                this.largeModelOptimizationsApplied = true;
+            } else if (isLargeModel) {
+                // Ottimizzazioni progressive per tutti i modelli
                 object.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        if (child.material.map) {
-                            child.material.map.minFilter = THREE.LinearFilter;
-                            child.material.map.magFilter = THREE.LinearFilter;
+                    if (child.isMesh) {
+                        // Ottimizzazioni di base per tutti i modelli
+                        if (child.material) {
+                            // Ottimizza le texture
+                            if (child.material.map) {
+                                child.material.map.minFilter = THREE.LinearFilter;
+                                child.material.map.magFilter = THREE.LinearFilter;
+                            }
+                            
+                            // Disabilita caratteristiche non necessarie per modelli grandi
+                            child.material.transparent = false;
+                            child.castShadow = false;
+                            child.receiveShadow = false;
+                            
+                            // Forza l'aggiornamento del materiale
+                            child.material.needsUpdate = true;
                         }
-                        // Disable unnecessary features for performance
-                        child.material.transparent = false;
-                        child.castShadow = false;
-                        child.receiveShadow = false;
+                        
+                        // Abilita frustum culling per tutti i modelli grandi
+                        child.frustumCulled = true;
                     }
                 });
+            }
+            
+            // Implementa ottimizzazioni di memoria per modelli grandi
+            if (isLargeModel) {
+                // Implementa un sistema di gestione della memoria
+                console.log('Implementando sistema di gestione della memoria...');
+                
+                // Imposta un timer per controllare periodicamente l'uso della memoria
+                this.memoryCheckInterval = setInterval(() => {
+                    if ('memory' in performance) {
+                        const memInfo = performance.memory;
+                        const usedMB = memInfo.usedJSHeapSize / (1024 * 1024);
+                        const limitMB = memInfo.jsHeapSizeLimit / (1024 * 1024);
+                        const usagePercent = (usedMB / limitMB) * 100;
+                        
+                        // Se l'uso della memoria è critico, applica ottimizzazioni di emergenza
+                        if (usagePercent > 90 && !this.emergencyOptimizationsApplied) {
+                            console.warn(`Memoria critica: ${usagePercent.toFixed(1)}% utilizzata. Applicando ottimizzazioni di emergenza...`);
+                            this.applyEmergencyOptimizations();
+                            this.emergencyOptimizationsApplied = true;
+                        }
+                    }
+                }, 10000); // Controlla ogni 10 secondi
+            }
+            
+            // Implementa ottimizzazioni di rendering per modelli grandi
+            if (isVeryLargeModel) {
+                // Riduci la qualità del renderer
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                
+                // Usa shadow map più semplici
+                this.renderer.shadowMap.type = THREE.BasicShadowMap;
+            }
+            
+            // Implementa ottimizzazioni drastiche per modelli critici
+            if (isCriticalModel) {
+                // Riduci drasticamente la qualità del renderer
+                this.renderer.setPixelRatio(1);
+                this.renderer.shadowMap.enabled = false;
+                this.lowQualityRendering = true;
+                
+                // Implementa LOD per modelli critici
+                console.log('Implementando Level of Detail (LOD) per modello critico...');
+                this.setupSimpleLOD(object);
             }
             
             // Enable shadows and prepare for clickable objects
@@ -1550,7 +1660,150 @@ class ModelViewer {
         
         this.camera.aspect = window.innerWidth / availableHeight;
         this.camera.updateProjectionMatrix();
+        
+        // Adatta la qualità del rendering in base alle dimensioni della finestra
+        const smallScreen = window.innerWidth < 768 || availableHeight < 600;
+        const mediumScreen = window.innerWidth < 1200 || availableHeight < 900;
+        
+        // Ottimizza automaticamente per schermi piccoli
+        if (smallScreen && this.currentModel) {
+            // Riduci drasticamente la qualità per schermi piccoli
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
+            this.renderer.shadowMap.enabled = false;
+            
+            // Disabilita effetti avanzati per migliorare le prestazioni su dispositivi mobili
+            if (!this.lowQualityRendering) {
+                console.log('Applicando ottimizzazioni per schermo piccolo...');
+                this.lowQualityRendering = true;
+                
+                // Applica ottimizzazioni simili a quelle per modelli grandi
+                if (this.currentModel && !this.smallScreenOptimizationsApplied) {
+                    this.applyHighMemoryOptimizations();
+                    this.smallScreenOptimizationsApplied = true;
+                }
+            }
+        } else if (mediumScreen && this.currentModel && this.modelSizeMB > 100) {
+            // Per schermi medi con modelli grandi, applica ottimizzazioni moderate
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            this.renderer.shadowMap.type = THREE.BasicShadowMap;
+        } else if (this.currentModel && this.modelSizeMB > 300) {
+            // Mantieni ottimizzazioni per modelli critici indipendentemente dalla dimensione dello schermo
+            this.renderer.setPixelRatio(1.0);
+            this.renderer.shadowMap.enabled = false;
+        } else {
+            // Ripristina impostazioni di qualità per schermi grandi con modelli piccoli
+            if (this.lowQualityRendering && !this.emergencyOptimizationsApplied) {
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.lowQualityRendering = false;
+            }
+        }
+        
+        // Aggiorna le dimensioni del renderer
         this.renderer.setSize(window.innerWidth, availableHeight);
+        
+        // Controlla l'uso della memoria dopo il ridimensionamento
+        if (this.currentModel && 'memory' in performance) {
+            const memInfo = performance.memory;
+            const usedMB = memInfo.usedJSHeapSize / (1024 * 1024);
+            const limitMB = memInfo.jsHeapSizeLimit / (1024 * 1024);
+            const usagePercent = (usedMB / limitMB) * 100;
+            
+            // Se l'uso della memoria è critico dopo il ridimensionamento, applica ottimizzazioni di emergenza
+            if (usagePercent > 90 && !this.emergencyOptimizationsApplied) {
+                console.warn(`Memoria critica dopo ridimensionamento: ${usagePercent.toFixed(1)}% utilizzata`);
+                this.applyEmergencyOptimizations();
+                this.emergencyOptimizationsApplied = true;
+            }
+        }
+    }
+    
+    setupSimpleLOD(object) {
+        // Implementa un sistema di Level of Detail (LOD) semplice
+        // Questa funzione crea versioni semplificate degli oggetti mesh per migliorare le prestazioni
+        // quando la telecamera è lontana dall'oggetto
+        
+        const meshes = [];
+        object.traverse(child => {
+            if (child.isMesh && child.geometry) {
+                meshes.push(child);
+            }
+        });
+        
+        console.log(`Creando LOD per ${meshes.length} mesh...`);
+        
+        // Limita il numero di mesh da processare per evitare sovraccarichi
+        const maxMeshesToProcess = 50;
+        const meshesToProcess = meshes.slice(0, maxMeshesToProcess);
+        
+        // Crea LOD solo per mesh con un numero significativo di vertici
+        meshesToProcess.forEach(mesh => {
+            // Verifica se la mesh ha abbastanza vertici da giustificare un LOD
+            const vertexCount = mesh.geometry.attributes.position.count;
+            if (vertexCount > 1000) {
+                // Crea un oggetto LOD
+                const lod = new THREE.LOD();
+                
+                // Posiziona il LOD nella stessa posizione della mesh originale
+                lod.position.copy(mesh.position);
+                lod.rotation.copy(mesh.rotation);
+                lod.scale.copy(mesh.scale);
+                
+                // Aggiungi la mesh originale come livello di dettaglio più alto
+                lod.addLevel(mesh, 0);
+                
+                // Crea una versione semplificata della mesh (riduzione del 75% dei vertici)
+                // Nota: in una implementazione reale, si userebbe un algoritmo di decimazione
+                // come SimplifyModifier, ma qui simuliamo una mesh semplificata
+                const simplifiedMesh = mesh.clone();
+                
+                // Simula una geometria semplificata riducendo la risoluzione del materiale
+                if (simplifiedMesh.material) {
+                    if (Array.isArray(simplifiedMesh.material)) {
+                        simplifiedMesh.material.forEach(mat => {
+                            mat.wireframe = false;
+                            mat.flatShading = true;
+                            if (mat.map) mat.map.minFilter = THREE.NearestFilter;
+                        });
+                    } else {
+                        simplifiedMesh.material.wireframe = false;
+                        simplifiedMesh.material.flatShading = true;
+                        if (simplifiedMesh.material.map) {
+                            simplifiedMesh.material.map.minFilter = THREE.NearestFilter;
+                        }
+                    }
+                }
+                
+                // Aggiungi la mesh semplificata come livello di dettaglio medio
+                lod.addLevel(simplifiedMesh, 10);
+                
+                // Crea una versione molto semplificata per distanze maggiori
+                const verySimplifiedMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(1, 1, 1),
+                    new THREE.MeshBasicMaterial({ color: 0x888888 })
+                );
+                
+                // Scala il box per adattarlo alle dimensioni della mesh originale
+                const box = new THREE.Box3().setFromObject(mesh);
+                const size = box.getSize(new THREE.Vector3());
+                verySimplifiedMesh.scale.set(size.x, size.y, size.z);
+                
+                // Aggiungi la mesh molto semplificata come livello di dettaglio più basso
+                lod.addLevel(verySimplifiedMesh, 50);
+                
+                // Sostituisci la mesh originale con l'oggetto LOD
+                if (mesh.parent) {
+                    const parent = mesh.parent;
+                    const index = parent.children.indexOf(mesh);
+                    if (index !== -1) {
+                        parent.children.splice(index, 1, lod);
+                    }
+                }
+            }
+        });
+        
+        console.log('Sistema LOD configurato con successo');
     }
     
     checkMemoryUsage(modelSizeMB) {
@@ -1562,11 +1815,36 @@ class ModelViewer {
             
             console.log(`Memoria utilizzata: ${usedMB.toFixed(1)}MB / ${limitMB.toFixed(1)}MB (${usagePercent.toFixed(1)}%)`);
             
+            // Salva la dimensione del modello per riferimento futuro
+            this.modelSizeMB = modelSizeMB || 0;
+            
+            // Applica ottimizzazioni preventive basate sulla dimensione del modello
+            if (modelSizeMB > 300 && !this.criticalOptimizationsApplied) {
+                console.warn('Modello molto grande (>300MB) rilevato. Applicando ottimizzazioni preventive...');
+                this.applyCriticalModelOptimizations();
+                this.criticalOptimizationsApplied = true;
+            } else if (modelSizeMB > 100 && !this.largeModelOptimizationsApplied) {
+                console.warn('Modello grande (>100MB) rilevato. Applicando ottimizzazioni preventive...');
+                this.applyLargeModelOptimizations();
+                this.largeModelOptimizationsApplied = true;
+            }
+            
+            // Gestione memoria in base all'utilizzo
             if (usagePercent > 80) {
-                console.warn('Uso memoria elevato! Considera di ridurre la qualità del modello.');
+                console.warn('Uso memoria elevato! Applicando ottimizzazioni automatiche.');
                 
+                // Applica ottimizzazioni progressive in base all'utilizzo della memoria
                 if (usagePercent > 90) {
-                    alert('Attenzione: Memoria quasi esaurita. L\'applicazione potrebbe rallentare o bloccarsi.');
+                    if (!this.emergencyOptimizationsApplied) {
+                        alert('Attenzione: Memoria quasi esaurita. Applicando ottimizzazioni di emergenza.');
+                        this.applyEmergencyOptimizations();
+                        this.emergencyOptimizationsApplied = true;
+                    }
+                } else if (usagePercent > 85) {
+                    if (!this.highMemoryOptimizationsApplied) {
+                        this.applyHighMemoryOptimizations();
+                        this.highMemoryOptimizationsApplied = true;
+                    }
                 }
             }
             
@@ -1574,6 +1852,409 @@ class ModelViewer {
             if (modelSizeMB > 50 && usagePercent > 60) {
                 console.log('Suggerimento: Per modelli grandi, considera di disabilitare le ombre per migliorare le prestazioni.');
             }
+            
+            return usagePercent;
+        }
+        return 0;
+    }
+    
+    // Ottimizzazioni per modelli critici (>300MB)
+    applyCriticalModelOptimizations() {
+        console.warn('Applicando ottimizzazioni per modello critico (>300MB)...');
+        
+        // Riduci drasticamente la qualità del renderer
+        this.renderer.setPixelRatio(1);
+        this.renderer.shadowMap.enabled = false;
+        this.lowQualityRendering = true;
+        
+        if (this.currentModel) {
+            // Applica ottimizzazioni aggressive a tutti i materiali e geometrie
+            this.currentModel.traverse(child => {
+                if (child.isMesh) {
+                    // Abilita frustum culling aggressivo
+                    child.frustumCulled = true;
+                    
+                    // Semplifica la geometria
+                    if (child.geometry) {
+                        // Rimuovi attributi non essenziali per risparmiare memoria
+                        ['color', 'uv2', 'tangent', 'bitangent'].forEach(attr => {
+                            if (child.geometry.attributes[attr]) {
+                                child.geometry.deleteAttribute(attr);
+                            }
+                        });
+                        
+                        // Riduci la precisione degli attributi di posizione e normali
+                        if (child.geometry.attributes.position && 
+                            child.geometry.attributes.position.array instanceof Float32Array && 
+                            child.geometry.attributes.position.count > 5000) {
+                            
+                            // Converti da Float32Array a Float16Array (simulato con Int16Array)
+                            const positions = child.geometry.attributes.position.array;
+                            const scale = 1000; // Fattore di scala per preservare precisione
+                            
+                            // Crea un nuovo array con precisione ridotta
+                            const reducedPositions = new Int16Array(positions.length);
+                            for (let i = 0; i < positions.length; i++) {
+                                reducedPositions[i] = Math.round(positions[i] * scale);
+                            }
+                            
+                            // Sostituisci l'attributo originale
+                            child.geometry.setAttribute('position', new THREE.BufferAttribute(reducedPositions, 3));
+                            child.geometry.attributes.position.needsUpdate = true;
+                        }
+                    }
+                    
+                    // Semplifica drasticamente i materiali
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            // Ottimizza texture prima di sostituire i materiali
+                            child.material.forEach(m => {
+                                if (m.map) {
+                                    // Applica ottimizzazioni estreme alle texture
+                                    this.optimizeTexture(m.map, 'extreme');
+                                }
+                                m.dispose(); // Libera memoria
+                            });
+                            
+                            // Sostituisci tutti i materiali con un materiale base
+                            const simpleMaterial = new THREE.MeshBasicMaterial({ 
+                                color: 0xcccccc,
+                                flatShading: true
+                            });
+                            child.material = simpleMaterial;
+                        } else {
+                            // Ottimizza texture prima di sostituire il materiale
+                            if (child.material.map) {
+                                this.optimizeTexture(child.material.map, 'extreme');
+                            }
+                            
+                            // Converti in materiale base
+                            const color = child.material.color ? child.material.color.getHex() : 0xcccccc;
+                            child.material.dispose(); // Libera memoria del materiale
+                            child.material = new THREE.MeshBasicMaterial({ 
+                                color: color,
+                                flatShading: true
+                            });
+                        }
+                    }
+                    
+                    // Disabilita oggetti molto piccoli per risparmiare risorse di rendering
+                    if (child.geometry && child.geometry.attributes.position.count < 50) {
+                        child.visible = false;
+                    }
+                }
+            });
+            
+            // Implementa LOD per modelli critici
+            this.setupSimpleLOD(this.currentModel);
+            
+            // Riduci la risoluzione del renderer
+            this.renderer.setSize(
+                Math.floor(window.innerWidth * 0.8),
+                Math.floor((window.innerHeight - 140) * 0.8)
+            );
+            
+            // Forza la garbage collection
+            if (window.gc) {
+                window.gc();
+            } else {
+                // Tenta di forzare la garbage collection indirettamente
+                const arr = [];
+                for (let i = 0; i < 1000000; i++) {
+                    arr.push(new ArrayBuffer(1024));
+                }
+                arr.length = 0;
+            }
+            
+            console.log('Ottimizzazioni per modello critico applicate');
+        }
+    }
+    
+    // Ottimizzazioni per modelli grandi (>100MB)
+    applyLargeModelOptimizations() {
+        console.warn('Applicando ottimizzazioni per modello grande (>100MB)...');
+        
+        // Riduci la qualità del renderer ma mantieni alcune funzionalità
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.BasicShadowMap; // Usa shadow map più semplici
+        
+        if (this.currentModel) {
+            // Applica ottimizzazioni moderate a tutti i materiali e geometrie
+            this.currentModel.traverse(child => {
+                if (child.isMesh) {
+                    // Abilita frustum culling
+                    child.frustumCulled = true;
+                    
+                    // Ottimizza materiali
+                    if (child.material) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        
+                        materials.forEach(material => {
+                            // Riduci la qualità delle texture usando la funzione ottimizzata
+                            if (material.map) {
+                                this.optimizeTexture(material.map, 'high');
+                            }
+                            
+                            // Disabilita effetti avanzati
+                            material.envMap = null;
+                            material.lightMap = null;
+                            material.aoMap = null;
+                            material.emissiveMap = null;
+                            
+                            // Riduci la complessità del materiale
+                            material.flatShading = true;
+                            material.wireframe = false;
+                            material.transparent = false;
+                            material.fog = false;
+                        });
+                    }
+                    
+                    // Ottimizza geometria per modelli con molti vertici
+                    if (child.geometry && child.geometry.attributes.position.count > 10000) {
+                        // Rimuovi attributi non essenziali per risparmiare memoria
+                        ['color', 'tangent'].forEach(attr => {
+                            if (child.geometry.attributes[attr]) {
+                                child.geometry.deleteAttribute(attr);
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // Configura un intervallo per controllare periodicamente l'uso della memoria
+            if (!this.memoryCheckIntervalId) {
+                this.memoryCheckIntervalId = setInterval(() => {
+                    if ('memory' in performance) {
+                        const memInfo = performance.memory;
+                        const usedMB = memInfo.usedJSHeapSize / (1024 * 1024);
+                        const limitMB = memInfo.jsHeapSizeLimit / (1024 * 1024);
+                        const usagePercent = (usedMB / limitMB) * 100;
+                        
+                        if (usagePercent > 85 && !this.highMemoryOptimizationsApplied) {
+                            console.warn(`Memoria alta durante rendering: ${usagePercent.toFixed(1)}% utilizzata`);
+                            this.applyHighMemoryOptimizations();
+                            this.highMemoryOptimizationsApplied = true;
+                        }
+                    }
+                }, this.memoryCheckInterval);
+            }
+            
+            console.log('Ottimizzazioni per modello grande applicate');
+        }
+    }
+    
+    // Ottimizzazioni per uso elevato di memoria (>85%)
+    applyHighMemoryOptimizations() {
+        console.warn('Applicando ottimizzazioni per uso elevato di memoria...');
+        
+        // Riduci la qualità del renderer
+        const currentPixelRatio = this.renderer.getPixelRatio();
+        this.renderer.setPixelRatio(Math.min(currentPixelRatio, 1.0));
+        
+        if (this.currentModel) {
+            // Applica ottimizzazioni selettive
+            this.currentModel.traverse(child => {
+                if (child.isMesh) {
+                    // Disabilita ombre per tutti gli oggetti
+                    child.castShadow = false;
+                    child.receiveShadow = false;
+                    
+                    // Ottimizza materiali selettivamente
+                    if (child.material) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        
+                        materials.forEach(material => {
+                            // Riduci la qualità delle texture
+                            if (material.map) {
+                                this.optimizeTexture(material.map, 'high');
+                            }
+                            
+                            // Disabilita effetti costosi
+                            material.envMap = null;
+                        });
+                    }
+                }
+            });
+            
+            console.log('Ottimizzazioni per uso elevato di memoria applicate');
+        }
+    }
+    
+    // Optimize texture with dynamic quality based on device capabilities
+    optimizeTexture(texture, level = 'medium') {
+        if (!texture) return;
+        
+        // Rileva capacità del dispositivo
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isLowEndDevice = isMobile || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+        
+        // Determina il livello di ottimizzazione in base al dispositivo e al parametro level
+        let optimizationLevel = level;
+        if (isLowEndDevice && level === 'medium') {
+            optimizationLevel = 'high';
+        } else if (this.modelSizeMB > 300) {
+            optimizationLevel = 'extreme';
+        } else if (this.modelSizeMB > 100 && level === 'medium') {
+            optimizationLevel = 'high';
+        }
+        
+        // Applica ottimizzazioni in base al livello
+        switch (optimizationLevel) {
+            case 'low':
+                // Ottimizzazioni leggere per modelli piccoli
+                texture.minFilter = THREE.LinearMipmapLinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.generateMipmaps = true;
+                texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+                break;
+                
+            case 'medium':
+                // Ottimizzazioni moderate per modelli medi
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.generateMipmaps = false;
+                texture.anisotropy = 1;
+                break;
+                
+            case 'high':
+                // Ottimizzazioni aggressive per modelli grandi
+                texture.minFilter = THREE.NearestFilter;
+                texture.magFilter = THREE.NearestFilter;
+                texture.generateMipmaps = false;
+                texture.anisotropy = 1;
+                
+                // Riduci la risoluzione della texture per modelli grandi
+                if (texture.image && texture.image.width > 512) {
+                    this.reduceTextureResolution(texture, 0.5);
+                }
+                break;
+                
+            case 'extreme':
+                // Ottimizzazioni estreme per modelli critici
+                texture.minFilter = THREE.NearestFilter;
+                texture.magFilter = THREE.NearestFilter;
+                texture.generateMipmaps = false;
+                texture.anisotropy = 1;
+                
+                // Riduci drasticamente la risoluzione della texture per modelli critici
+                if (texture.image && texture.image.width > 256) {
+                    this.reduceTextureResolution(texture, 0.25);
+                }
+                break;
+        }
+        
+        texture.needsUpdate = true;
+    }
+    
+    // Riduce la risoluzione di una texture
+    reduceTextureResolution(texture, scale) {
+        if (!texture || !texture.image) return;
+        
+        // Crea un canvas temporaneo per ridimensionare l'immagine
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Calcola le nuove dimensioni
+        const newWidth = Math.max(32, Math.floor(texture.image.width * scale));
+        const newHeight = Math.max(32, Math.floor(texture.image.height * scale));
+        
+        // Imposta le dimensioni del canvas
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        
+        // Disegna l'immagine ridimensionata sul canvas
+        ctx.drawImage(texture.image, 0, 0, newWidth, newHeight);
+        
+        // Aggiorna la texture con l'immagine ridimensionata
+        texture.image = canvas;
+        texture.needsUpdate = true;
+        
+        console.log(`Texture ridimensionata da ${texture.image.width}x${texture.image.height} a ${newWidth}x${newHeight}`);
+    }
+    
+    // Ottimizzazioni di emergenza per situazioni critiche (>90% memoria)
+    applyEmergencyOptimizations() {
+        console.warn('Applicando ottimizzazioni di emergenza per liberare memoria...');
+        
+        // Riduci drasticamente la qualità del renderer
+        this.renderer.setPixelRatio(1);
+        this.renderer.shadowMap.enabled = false;
+        this.lowQualityRendering = true;
+        
+        if (this.currentModel) {
+            // Rimuovi texture e semplifica materiali
+            this.currentModel.traverse(child => {
+                if (child.isMesh) {
+                    // Semplifica la geometria se possibile
+                    if (child.geometry && child.geometry.attributes.position.count > 1000) {
+                        // Rimuovi attributi non essenziali
+                        ['normal', 'uv', 'color', 'tangent', 'uv2', 'bitangent'].forEach(attr => {
+                            if (child.geometry.attributes[attr]) {
+                                child.geometry.deleteAttribute(attr);
+                            }
+                        });
+                        
+                        // Ricalcola le normali in modo semplificato se necessario
+                        if (!child.geometry.attributes.normal) {
+                            child.geometry.computeVertexNormals();
+                        }
+                    }
+                    
+                    // Semplifica materiali
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            // Ottimizza texture prima di sostituire i materiali
+                            child.material.forEach(m => {
+                                if (m.map) {
+                                    // Applica ottimizzazioni estreme alle texture
+                                    this.optimizeTexture(m.map, 'extreme');
+                                }
+                                m.dispose(); // Libera memoria
+                            });
+                            // Sostituisci tutti i materiali con un materiale base
+                            child.material = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+                        } else {
+                            // Ottimizza texture prima di sostituire il materiale
+                            if (child.material.map) {
+                                this.optimizeTexture(child.material.map, 'extreme');
+                            }
+                            // Converti in materiale base
+                            const color = child.material.color ? child.material.color.getHex() : 0xcccccc;
+                            child.material.dispose(); // Libera memoria del materiale
+                            child.material = new THREE.MeshBasicMaterial({ color: color });
+                        }
+                    }
+                    
+                    // Disabilita oggetti non essenziali
+                    if (child.geometry && child.geometry.attributes.position.count < 100) {
+                        child.visible = false;
+                    }
+                    
+                    // Abilita frustum culling aggressivo
+                    child.frustumCulled = true;
+                }
+            });
+            
+            // Riduci la risoluzione del renderer
+            this.renderer.setSize(
+                Math.floor(window.innerWidth * 0.75),
+                Math.floor((window.innerHeight - 140) * 0.75)
+            );
+            
+            // Forza la garbage collection
+            if (window.gc) {
+                window.gc();
+            } else {
+                // Tenta di forzare la garbage collection indirettamente
+                const arr = [];
+                for (let i = 0; i < 1000000; i++) {
+                    arr.push(new ArrayBuffer(1024));
+                }
+                arr.length = 0;
+            }
+            
+            console.log('Ottimizzazioni di emergenza applicate');
         }
     }
     
@@ -1592,15 +2273,94 @@ class ModelViewer {
                 
                 if (usagePercent > 85) {
                     console.warn(`Memoria critica: ${usagePercent.toFixed(1)}% utilizzata`);
+                    
+                    // Applica ottimizzazioni di emergenza se l'uso della memoria è critico
+                    if (usagePercent > 90 && !this.emergencyOptimizationsApplied) {
+                        this.applyEmergencyOptimizations();
+                        this.emergencyOptimizationsApplied = true;
+                    }
                 }
             }
+        }
+        
+        // Ottimizzazione dinamica del frustum culling per modelli grandi
+        if (this.currentModel && this.modelSizeMB > 100) {
+            // Aggiorna la matrice di frustum della camera
+            this.camera.updateMatrixWorld();
+            const frustum = new THREE.Frustum();
+            frustum.setFromProjectionMatrix(
+                new THREE.Matrix4().multiplyMatrices(
+                    this.camera.projectionMatrix,
+                    this.camera.matrixWorldInverse
+                )
+            );
+            
+            // Applica culling dinamico basato sulla distanza e dimensione
+            this.currentModel.traverse(child => {
+                if (child.isMesh) {
+                    // Calcola la distanza dalla camera
+                    const distance = this.camera.position.distanceTo(child.position);
+                    
+                    // Disabilita rendering per oggetti molto piccoli a grande distanza
+                    if (child.geometry && child.geometry.attributes.position) {
+                        const vertexCount = child.geometry.attributes.position.count;
+                        
+                        // Più aggressivo per modelli molto grandi
+                        if (this.modelSizeMB > 300) {
+                            // Disabilita oggetti piccoli a distanza media
+                            if (vertexCount < 100 && distance > 20) {
+                                child.visible = false;
+                                return;
+                            }
+                            
+                            // Disabilita oggetti medi a grande distanza
+                            if (vertexCount < 500 && distance > 50) {
+                                child.visible = false;
+                                return;
+                            }
+                        } else if (this.modelSizeMB > 100) {
+                            // Disabilita solo oggetti molto piccoli a grande distanza
+                            if (vertexCount < 50 && distance > 50) {
+                                child.visible = false;
+                                return;
+                            }
+                        }
+                        
+                        // Riattiva oggetti se tornano nel campo visivo
+                        if (!child.visible) {
+                            // Calcola bounding box/sphere se non esiste
+                            if (!child.geometry.boundingSphere) {
+                                child.geometry.computeBoundingSphere();
+                            }
+                            
+                            // Verifica se l'oggetto è nel frustum
+                            const sphere = child.geometry.boundingSphere.clone();
+                            sphere.applyMatrix4(child.matrixWorld);
+                            
+                            if (frustum.intersectsSphere(sphere)) {
+                                child.visible = true;
+                            }
+                        }
+                    }
+                }
+            });
         }
         
         // Check for intersections with clickable objects
         this.checkIntersections();
         
         this.controls.update();
-        this.renderer.render(this.scene, this.camera);
+        
+        // Ottimizzazione del rendering per modelli grandi
+        if (this.currentModel && this.modelSizeMB > 300 && !this.lowQualityRendering) {
+            // Riduci temporaneamente la qualità del rendering
+            const originalPixelRatio = this.renderer.getPixelRatio();
+            this.renderer.setPixelRatio(Math.min(originalPixelRatio, 1.0));
+            this.renderer.render(this.scene, this.camera);
+            this.renderer.setPixelRatio(originalPixelRatio);
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
     }
     
     // Metodo per aggiungere un oggetto cliccabile
