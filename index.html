@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <meta name="theme-color" content="#2196F3">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>3D Model Viewer</h1>
+            <input type="file" id="fileInput" accept=".fbx,.obj,.gltf,.glb" style="display: none;">
+            <button id="loadButton">Carica Modello 3D</button>
+        </header>
+        
+        <main>
+            <div id="viewer-container">
+                <canvas id="three-canvas"></canvas>
+                <div id="loading" class="hidden">
+                    <div class="spinner"></div>
+                    <p>Caricamento modello...</p>
+                </div>
+                <div id="instructions" class="overlay">
+                    <p>Tocca e trascina per ruotare</p>
+                    <p>Pizzica per zoomare</p>
+                    <p>Due dita per spostare</p>
+                </div>
+                <div id="object-tooltip" class="hidden"></div>
+            </div>
+        </main>
+        
+        <div id="controls">
+            <button id="resetView">Reset Vista</button>
+            <button id="wireframe">Wireframe</button>
+            <button id="fullscreen">Schermo Intero</button>
+            <button id="clickableModel">Modello Cliccabile</button>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Fallback per FBXLoader se non carica
+        if (typeof THREE.FBXLoader === 'undefined') {
+            console.warn('FBXLoader non disponibile, caricamento alternativo...');
+            // Implementazione fallback per test
+            THREE.FBXLoader = function() {
+                this.load = function(url, onLoad, onProgress, onError) {
+                    if (onError) onError(new Error('FBXLoader non disponibile. Usa un file di test o verifica la connessione.'));
+                };
+            };
+        }
+        
+        // Fallback per OBJLoader se non carica
+        if (typeof THREE.OBJLoader === 'undefined') {
+            console.warn('OBJLoader non disponibile, caricamento alternativo...');
+            // Implementazione fallback per test
+            THREE.OBJLoader = function() {
+                this.load = function(url, onLoad, onProgress, onError) {
+                    if (onError) onError(new Error('OBJLoader non disponibile. Usa un file di test o verifica la connessione.'));
+                };
+            };
+        }
+        
+        // Fallback per GLTFLoader se non carica
+        if (typeof THREE.GLTFLoader === 'undefined') {
+            console.warn('GLTFLoader non disponibile, caricamento alternativo...');
+            // Implementazione fallback per test
+            THREE.GLTFLoader = function() {
+                this.load = function(url, onLoad, onProgress, onError) {
+                    if (onError) onError(new Error('GLTFLoader non disponibile. Usa un file di test o verifica la connessione.'));
+                };
+            };
+        }
+    </script>
+    <script src="app.js"></script>
+    
+    <script>
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

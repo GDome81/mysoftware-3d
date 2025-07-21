@@ -1,0 +1,48 @@
+{
+  "name": "3D Model Viewer PWA",
+  "short_name": "3D Viewer",
+  "description": "Visualizzatore di modelli 3D FBX per dispositivi touch",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#2196F3",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["graphics", "utilities", "productivity"],
+  "screenshots": [
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "features": [
+    "3D model viewing",
+    "Touch controls",
+    "FBX format support",
+    "Offline capable"
+  ],
+  "prefer_related_applications": false
+}
