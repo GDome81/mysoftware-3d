@@ -757,6 +757,9 @@ class ModelViewer {
             this.scene.remove(this.currentModel);
         }
         
+        // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
+        this.clickableObjects = [];
+        
         const loadingInfo = {
             loading,
             instructions,
@@ -807,6 +810,26 @@ class ModelViewer {
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
                     this.processLoadedModel(object, loadingInfo, null, loadingTimeout, 'Motore V8');
+                    
+                    // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
+                    setTimeout(() => {
+                        if (this.currentModel) {
+                            // Rendi cliccabili le parti del motore
+                            this.makeModelPartsClickable(
+                                {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
+                                (obj) => {
+                                    // Quando l'utente clicca su una parte, mostra il nome
+                                    alert(`Hai cliccato su: ${obj.name}`);
+                                    // Cambia colore quando viene cliccato
+                                    if (obj.material) {
+                                        obj.material.color.set(Math.random() * 0xffffff);
+                                    }
+                                },
+                                'Clicca per interagire con {name}'
+                            );
+                            console.info('Modello Motore V8 con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.');
+                        }
+                    }, 500);
                 },
                 (progress) => {
                     if (progress.lengthComputable) {
