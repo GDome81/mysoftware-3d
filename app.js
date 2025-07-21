@@ -446,12 +446,36 @@ class ModelViewer {
             // Aggiungi la variabile viewer all'oggetto window per consentire l'accesso dalla console
             window.viewer = this;
             
+            // Rendi automaticamente cliccabili gli elementi del modello (massimo 50)
+            setTimeout(() => {
+                if (this.currentModel) {
+                    // Rendi cliccabili le parti del modello (limitato a 50 elementi)
+                    const maxClickableElements = 50;
+                    this.makeModelPartsClickable(
+                        {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
+                        (obj) => {
+                            // Quando l'utente clicca su una parte, mostra il nome
+                            alert(`Hai cliccato su: ${obj.name}`);
+                            // Cambia colore quando viene cliccato
+                            if (obj.material) {
+                                obj.material.color.set(Math.random() * 0xffffff);
+                            }
+                        },
+                        'Clicca per interagire con {name}',
+                        maxClickableElements
+                    );
+                    console.info(`Modello con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.`);
+                }
+            }, 500);
+            
             // Mostra un messaggio informativo all'utente
             const modelInfo = document.createElement('div');
             modelInfo.className = 'model-info';
             modelInfo.innerHTML = `
                 <h3>Modello ${modelType} caricato con successo!</h3>
                 <p>Questo modello contiene ${meshCount} elementi.</p>
+                <p>Gli elementi sono stati resi automaticamente cliccabili (max 50).</p>
+                <p>Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.</p>
                 <button id="close-info">Chiudi</button>
             `;
             document.body.appendChild(modelInfo);
@@ -814,7 +838,8 @@ class ModelViewer {
                     // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
                     setTimeout(() => {
                         if (this.currentModel) {
-                            // Rendi cliccabili le parti del motore
+                            // Rendi cliccabili le parti del motore (limitato a 50 elementi)
+                            const maxClickableElements = 50;
                             this.makeModelPartsClickable(
                                 {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
                                 (obj) => {
@@ -825,7 +850,8 @@ class ModelViewer {
                                         obj.material.color.set(Math.random() * 0xffffff);
                                     }
                                 },
-                                'Clicca per interagire con {name}'
+                                'Clicca per interagire con {name}',
+                                maxClickableElements
                             );
                             console.info('Modello Motore V8 con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.');
                         }
@@ -1215,6 +1241,10 @@ class ModelViewer {
         
         // Rendi cliccabile la sfera nel modello di test
         if (this.currentModel) {
+            // Limita il numero di elementi cliccabili
+            const maxClickableElements = 50;
+            let clickableCount = 0;
+            
             let sphere = null;
             this.currentModel.traverse((child) => {
                 if (child.isMesh && child.geometry instanceof THREE.SphereGeometry) {
@@ -1226,7 +1256,7 @@ class ModelViewer {
                 }
             });
             
-            if (sphere) {
+            if (sphere && clickableCount < maxClickableElements) {
                 this.makeObjectClickable(sphere, (obj) => {
                     alert(`Hai cliccato sulla sfera!\nPuoi definire qualsiasi azione qui.`);
                     // Esempio: cambia colore quando viene cliccato
@@ -1234,11 +1264,14 @@ class ModelViewer {
                         obj.material.color.set(Math.random() * 0xffffff);
                     }
                 }, 'Clicca per cambiare il colore della {name}');
+                clickableCount++;
             }
             
             // Rendi cliccabili anche i cubi
             let cubeIndex = 0;
             this.currentModel.traverse((child) => {
+                if (clickableCount >= maxClickableElements) return;
+                
                 if (child.isMesh && child.geometry instanceof THREE.BoxGeometry) {
                     const cubeNumber = cubeIndex++;
                     // Assegna un nome al cubo se non ne ha uno
@@ -1253,24 +1286,35 @@ class ModelViewer {
                             obj.material.color.set(Math.random() * 0xffffff);
                         }
                     }, `Clicca per cambiare il colore di {name}`);
+                    clickableCount++;
                 }
             });
             
-            console.info('Modello di test con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.');
+            console.info(`Modello di test con ${clickableCount} elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.`);
         }
     }
     
     // Metodo per rendere cliccabili parti specifiche di un modello
-    makeModelPartsClickable(criteria = {}, onClick, tooltip = '') {
+    makeModelPartsClickable(criteria = {}, onClick, tooltip = '', maxElements = Infinity) {
         if (!this.currentModel) {
             console.warn('Nessun modello caricato. Carica prima un modello.');
             return;
         }
         
         let clickableCount = 0;
+        let totalMeshCount = 0;
+        
+        // Prima conta il numero totale di mesh nel modello
+        this.currentModel.traverse((child) => {
+            if (child.isMesh) {
+                totalMeshCount++;
+            }
+        });
         
         // Attraversa tutti gli oggetti nel modello
         this.currentModel.traverse((child) => {
+            // Limita il numero di elementi cliccabili
+            if (clickableCount >= maxElements) return;
             let isMatch = false;
             
             // Verifica se l'oggetto corrisponde ai criteri specificati
@@ -1387,7 +1431,14 @@ class ModelViewer {
             }
         });
         
-        console.log(`Resi cliccabili ${clickableCount} oggetti nel modello.`);
+        const percentageClickable = totalMeshCount > 0 ? Math.round((clickableCount / totalMeshCount) * 100) : 0;
+        console.log(`Resi cliccabili ${clickableCount} oggetti nel modello (${percentageClickable}% del totale di ${totalMeshCount} mesh).`);
+        
+        // Se non ci sono elementi cliccabili, mostra un messaggio di avviso
+        if (clickableCount === 0) {
+            console.warn('Nessun elemento è stato reso cliccabile. Verifica che il modello contenga mesh valide.');
+        }
+        
         return clickableCount;
     }
     
