@@ -1,7 +1,7 @@
 {
   "name": "3D Model Viewer PWA",
   "short_name": "3D Viewer",
-  "description": "Visualizzatore di modelli 3D FBX per dispositivi touch",
+  "description": "Visualizzatore di modelli 3D (FBX, OBJ, GLTF/GLB) ottimizzato per dispositivi touch",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#667eea",

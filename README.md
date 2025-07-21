@@ -1,33 +1,49 @@
 # 3D Model Viewer PWA
 
-Una Progressive Web App (PWA) per visualizzare modelli 3D in formato FBX su dispositivi touch come tablet e smartphone.
+Una Progressive Web App (PWA) per visualizzare modelli 3D in formato FBX, OBJ e GLTF/GLB su dispositivi touch come tablet e smartphone.
 
 ## Caratteristiche
 
-- ✅ **Supporto FBX**: Carica e visualizza modelli 3D in formato FBX
+- ✅ **Supporto Multi-formato**: Carica e visualizza modelli 3D in formato FBX, OBJ e GLTF/GLB
 - ✅ **Controlli Touch**: Ottimizzato per dispositivi touch con gesture intuitive
 - ✅ **PWA**: Installabile come app nativa su dispositivi mobili
-- ✅ **Offline**: Funziona anche senza connessione internet (dopo la prima visita)
-- ✅ **Responsive**: Si adatta a schermi di diverse dimensioni
+- ✅ **Offline**: Funziona anche senza connessione internet con pagina di fallback dedicata
+- ✅ **Responsive**: Si adatta a schermi di diverse dimensioni e orientamenti
 - ✅ **Wireframe**: Modalità wireframe per analisi dettagliata
 - ✅ **Fullscreen**: Modalità schermo intero per immersione totale
+- ✅ **Oggetti Cliccabili**: Supporto per interazioni con parti specifiche del modello
+- ✅ **Feedback Tattile**: Vibrazione su dispositivi che lo supportano
+- ✅ **Aggiornamenti Automatici**: Notifica quando è disponibile una nuova versione
 
 ## Controlli Touch
 
 - **Un dito**: Ruota il modello
 - **Due dita (pinch)**: Zoom in/out
 - **Due dita (pan)**: Sposta la vista
+- **Tap su oggetto**: Attiva l'interazione con l'oggetto cliccabile
 - **Reset Vista**: Ripristina la posizione iniziale della camera
 - **Wireframe**: Attiva/disattiva la modalità wireframe
 - **Schermo Intero**: Entra/esci dalla modalità fullscreen
 
+## Funzionalità Mobile
+
+- **Indicatore Offline**: Banner che indica quando l'app è offline
+- **Prompt di Installazione**: Suggerimento per installare l'app sul dispositivo
+- **Orientamento Adattivo**: Ottimizzato sia per orientamento verticale che orizzontale
+- **Feedback Tattile**: Vibrazione quando si interagisce con oggetti cliccabili
+- **Aggiornamenti Automatici**: Notifica quando è disponibile una nuova versione dell'app
+
 ## Tecnologie Utilizzate
 
 - **Three.js**: Libreria 3D per WebGL
-- **FBXLoader**: Caricamento di modelli FBX
+- **Loaders**: Supporto per modelli FBX, OBJ e GLTF/GLB
 - **OrbitControls**: Controlli di navigazione 3D ottimizzati per touch
-- **Service Worker**: Cache e funzionalità offline
-- **Web App Manifest**: Installazione come PWA
+- **Raycasting**: Per l'interazione con oggetti cliccabili
+- **Service Worker**: Cache avanzata e funzionalità offline
+- **Web App Manifest**: Installazione come PWA con screenshot e icone
+- **Vibration API**: Feedback tattile su dispositivi supportati
+- **Orientation API**: Adattamento all'orientamento del dispositivo
+- **Network Information API**: Rilevamento dello stato della connessione
 
 ## Installazione
 
