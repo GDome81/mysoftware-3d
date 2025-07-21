@@ -1,7 +1,7 @@
-const CACHE_NAME = 'model-viewer-v3';
-const STATIC_CACHE = 'static-cache-v3';
-const DYNAMIC_CACHE = 'dynamic-cache-v3';
-const MODEL_CACHE = 'model-cache-v3';
+const CACHE_NAME = 'model-viewer-v4';
+const STATIC_CACHE = 'static-cache-v4';
+const DYNAMIC_CACHE = 'dynamic-cache-v4';
+const MODEL_CACHE = 'model-cache-v4';
 
 const STATIC_ASSETS = [
   './',
@@ -14,6 +14,8 @@ const STATIC_ASSETS = [
   './manifest.json',
   './icon-192x192.png',
   './icon-512x512.png',
+  './icon-192x192.svg',
+  './icon-512x512.svg',
   './splash-640x1136.png',
   './splash-750x1334.png',
   './splash-1242x2208.png',

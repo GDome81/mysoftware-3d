@@ -748,7 +748,7 @@ class ModelViewer {
                         'Clicca per interagire con {name}',
                         maxClickableElements
                     );
-                    console.info(`Modello con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.`);
+                    // Elementi cliccabili creati senza mostrare messaggi
                 }
             }, 500);
             
@@ -757,9 +757,6 @@ class ModelViewer {
             modelInfo.className = 'model-info';
             modelInfo.innerHTML = `
                 <h3>Modello ${modelType} caricato con successo!</h3>
-                <p>Questo modello contiene ${meshCount} elementi.</p>
-                <p>Gli elementi sono stati resi automaticamente cliccabili (max 50).</p>
-                <p>Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.</p>
                 <button id="close-info">Chiudi</button>
             `;
             document.body.appendChild(modelInfo);
@@ -1143,7 +1140,7 @@ class ModelViewer {
                                 'Clicca per interagire con {name}',
                                 maxClickableElements
                             );
-                            console.info('Modello Motore V8 con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.');
+                            // Elementi cliccabili creati senza mostrare messaggi
                         }
                     }, 500);
                 },
@@ -1427,7 +1424,7 @@ class ModelViewer {
                                 'Clicca per interagire con {name}',
                                 maxClickableElements
                             );
-                            console.info(`Modello ${modelName} con elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.`);
+                            // Elementi cliccabili creati senza mostrare messaggi
                         }
                     }, 500);
                 },
@@ -1864,7 +1861,7 @@ class ModelViewer {
                 }
             });
             
-            console.info(`Modello di test con ${clickableCount} elementi cliccabili creato! Passa il mouse sopra gli oggetti per vedere i tooltip e clicca per interagire.`);
+            // Elementi cliccabili creati senza mostrare messaggi
         }
     }
     
@@ -2005,8 +2002,8 @@ class ModelViewer {
             }
         });
         
+        // Calcolo statistiche senza mostrare messaggi
         const percentageClickable = totalMeshCount > 0 ? Math.round((clickableCount / totalMeshCount) * 100) : 0;
-        console.log(`Resi cliccabili ${clickableCount} oggetti nel modello (${percentageClickable}% del totale di ${totalMeshCount} mesh).`);
         
         // Se non ci sono elementi cliccabili, mostra un messaggio di avviso
         if (clickableCount === 0) {
