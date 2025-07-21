@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Offline - 3D Model Viewer</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: center;
+        }
+        
+        .offline-container {
+            max-width: 90%;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px;
+        }
+        
+        h1 {
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        .offline-icon {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #1976D2;
+        }
+        
+        @media (max-width: 768px) {
+            .offline-icon {
+                width: 100px;
+                height: 100px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            p {
+                font-size: 0.9rem;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <img src="offline.svg" alt="Offline" class="offline-icon">
+        <h1>Sei offline</h1>
+        <p>Non è possibile connettersi a Internet in questo momento.</p>
+        <p>Il 3D Model Viewer richiede una connessione per caricare nuovi modelli, ma puoi utilizzare i modelli già caricati in precedenza quando tornerai online.</p>
+        <button id="retry-button">Riprova</button>
+    </div>
+    
+    <script>
+        // Aggiungi event listener al pulsante di riprovare
+        document.getElementById('retry-button').addEventListener('click', function() {
+            // Ricarica la pagina per verificare se la connessione è tornata
+            window.location.reload();
+        });
+        
+        // Ascolta l'evento online per ricaricare automaticamente quando la connessione torna
+        window.addEventListener('online', function() {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

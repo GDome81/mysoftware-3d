@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <!-- Sfondo con gradiente -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#667eea" />
+      <stop offset="100%" stop-color="#764ba2" />
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg-gradient)" />
+  
+  <!-- Intestazione -->
+  <rect x="0" y="0" width="1280" height="60" fill="#2196F3" />
+  <text x="20" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">3D Model Viewer</text>
+  
+  <!-- Pulsanti -->
+  <rect x="1000" y="10" width="80" height="40" rx="5" fill="white" opacity="0.2" />
+  <text x="1040" y="35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white">Reset</text>
+  
+  <rect x="1090" y="10" width="80" height="40" rx="5" fill="white" opacity="0.2" />
+  <text x="1130" y="35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white">Load</text>
+  
+  <rect x="1180" y="10" width="40" height="40" rx="5" fill="white" opacity="0.2" />
+  <text x="1200" y="35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white">⛶</text>
+  
+  <!-- Area principale con modello 3D -->
+  <rect x="20" y="80" width="940" height="620" rx="10" fill="#1a1a2e" />
+  
+  <!-- Rappresentazione di un modello 3D (cubo in prospettiva) -->
+  <g transform="translate(490, 390)">
+    <!-- Faccia frontale -->
+    <polygon points="0,0 150,-100 150,50 0,150" fill="#4285F4" opacity="0.8" />
+    <!-- Faccia laterale -->
+    <polygon points="0,0 0,150 -150,50 -150,-100" fill="#34A853" opacity="0.8" />
+    <!-- Faccia superiore -->
+    <polygon points="0,0 150,-100 -150,-100" fill="#FBBC05" opacity="0.8" />
+    
+    <!-- Linee del cubo -->
+    <line x1="0" y1="0" x2="150" y2="-100" stroke="white" stroke-width="2" />
+    <line x1="0" y1="0" x2="0" y2="150" stroke="white" stroke-width="2" />
+    <line x1="0" y1="0" x2="-150" y2="-100" stroke="white" stroke-width="2" />
+    <line x1="150" y1="-100" x2="150" y2="50" stroke="white" stroke-width="2" />
+    <line x1="150" y1="-100" x2="-150" y2="-100" stroke="white" stroke-width="2" />
+    <line x1="-150" y1="-100" x2="-150" y2="50" stroke="white" stroke-width="2" />
+    <line x1="-150" y1="50" x2="0" y2="150" stroke="white" stroke-width="2" />
+    <line x1="0" y1="150" x2="150" y2="50" stroke="white" stroke-width="2" />
+    <line x1="150" y1="50" x2="-150" y2="50" stroke="white" stroke-width="2" opacity="0.5" />
+  </g>
+  
+  <!-- Pannello di controllo laterale -->
+  <rect x="980" y="80" width="280" height="620" rx="10" fill="white" opacity="0.1" />
+  
+  <!-- Controlli nel pannello -->
+  <text x="1120" y="110" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="white">Controls</text>
+  
+  <!-- Slider per la rotazione -->
+  <text x="1000" y="150" font-family="Arial, sans-serif" font-size="14" fill="white">Rotation X</text>
+  <rect x="1000" y="160" width="240" height="10" rx="5" fill="#444" />
+  <circle cx="1120" cy="165" r="8" fill="#2196F3" />
+  
+  <text x="1000" y="200" font-family="Arial, sans-serif" font-size="14" fill="white">Rotation Y</text>
+  <rect x="1000" y="210" width="240" height="10" rx="5" fill="#444" />
+  <circle cx="1080" cy="215" r="8" fill="#2196F3" />
+  
+  <text x="1000" y="250" font-family="Arial, sans-serif" font-size="14" fill="white">Rotation Z</text>
+  <rect x="1000" y="260" width="240" height="10" rx="5" fill="#444" />
+  <circle cx="1180" cy="265" r="8" fill="#2196F3" />
+  
+  <!-- Checkbox per wireframe -->
+  <rect x="1000" y="300" width="20" height="20" rx="3" fill="white" stroke="#2196F3" stroke-width="2" />
+  <text x="1030" y="315" font-family="Arial, sans-serif" font-size="14" fill="white">Wireframe mode</text>
+  
+  <!-- Informazioni sul modello -->
+  <text x="1000" y="360" font-family="Arial, sans-serif" font-size="14" fill="white">Model Info</text>
+  <rect x="1000" y="370" width="240" height="100" rx="5" fill="#444" opacity="0.5" />
+  <text x="1010" y="390" font-family="Arial, sans-serif" font-size="12" fill="white">Name: Example Model</text>
+  <text x="1010" y="410" font-family="Arial, sans-serif" font-size="12" fill="white">Vertices: 12,458</text>
+  <text x="1010" y="430" font-family="Arial, sans-serif" font-size="12" fill="white">Triangles: 24,716</text>
+  <text x="1010" y="450" font-family="Arial, sans-serif" font-size="12" fill="white">Format: GLB</text>
+  
+  <!-- Pulsanti di azione -->
+  <rect x="1000" y="500" width="240" height="40" rx="5" fill="#2196F3" />
+  <text x="1120" y="525" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white">Export as PNG</text>
+  
+  <rect x="1000" y="550" width="240" height="40" rx="5" fill="#4CAF50" />
+  <text x="1120" y="575" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white">Share Model</text>
+  
+  <!-- Indicatore PWA -->
+  <rect x="1000" y="650" width="240" height="30" rx="15" fill="#FF9800" opacity="0.8" />
+  <text x="1120" y="670" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">✓ Available Offline</text>
+</svg>

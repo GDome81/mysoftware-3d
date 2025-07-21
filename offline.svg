@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Sfondo circolare -->
+  <circle cx="100" cy="100" r="90" fill="#f5f5f5" stroke="#2196F3" stroke-width="5"/>
+  
+  <!-- Icona cloud con slash -->
+  <path d="M150,100 C150,77.91 132.09,60 110,60 C93.97,60 80.37,69.29 74.58,82.59 C72.28,81.56 69.7,81 67,81 C56.51,81 48,89.51 48,100 C48,110.49 56.51,119 67,119 L110,119" fill="none" stroke="#757575" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Slash attraverso il cloud -->
+  <line x1="60" y1="140" x2="140" y2="60" stroke="#e53935" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Testo "Offline" -->
+  <text x="100" y="150" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#424242" font-weight="bold">OFFLINE</text>
+</svg>
