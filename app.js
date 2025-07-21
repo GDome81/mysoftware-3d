@@ -101,42 +101,60 @@ class ModelViewer {
     }
     
     setupEventListeners() {
-        const loadButton = document.getElementById('loadButton');
         const fileInput = document.getElementById('fileInput');
-        const resetButton = document.getElementById('resetView');
-        const wireframeButton = document.getElementById('wireframe');
-        const fullscreenButton = document.getElementById('fullscreen');
         
-        loadButton.addEventListener('click', () => {
+        // Gestione dei nuovi menu dropdown
+        const uploadModelBtn = document.getElementById('uploadModelBtn');
+        const testModelBtn = document.getElementById('testModelBtn');
+        const engineModelBtn = document.getElementById('engineModelBtn');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        const wireframeBtn = document.getElementById('wireframeBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        
+        // Carica file
+        uploadModelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             fileInput.click();
         });
         
-        // Aggiungi pulsante per modello di test
-        const testButton = document.createElement('button');
-        testButton.textContent = 'Modello Test';
-        testButton.style.marginLeft = '10px';
-        testButton.addEventListener('click', () => {
+        // Modello test (ora con funzionalità cliccabile di default)
+        testModelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Carica il modello test e lo rende cliccabile di default
             this.loadTestModel();
+            // Aggiungi un breve ritardo per assicurarsi che il modello sia caricato
+            setTimeout(() => {
+                if (this.currentModel) {
+                    this.createClickableTestModel();
+                }
+            }, 100);
         });
-        loadButton.parentNode.appendChild(testButton);
         
-        // Aggiungi pulsante per modello GLB di esempio
-        const exampleGlbButton = document.createElement('button');
-        exampleGlbButton.textContent = 'Motore V8';
-        exampleGlbButton.style.marginLeft = '10px';
-        exampleGlbButton.addEventListener('click', () => {
+        // Motore V8
+        engineModelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             this.loadExampleGlbModel();
         });
-        loadButton.parentNode.appendChild(exampleGlbButton);
         
-        // Aggiungi event listener per il pulsante modello cliccabile
-        const clickableModelButton = document.getElementById('clickableModel');
-        if (clickableModelButton) {
-            clickableModelButton.addEventListener('click', () => {
-                this.createClickableTestModel();
-            });
-        }
+        // Reset vista
+        resetViewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.resetView();
+        });
         
+        // Wireframe
+        wireframeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggleWireframe();
+        });
+        
+        // Schermo intero
+        fullscreenBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggleFullscreen();
+        });
+        
+        // Gestione del caricamento file
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
@@ -153,18 +171,6 @@ class ModelViewer {
                 alert('Per favore seleziona un file 3D valido (.fbx, .obj, .gltf, .glb).');
             }
         });
-        
-        resetButton.addEventListener('click', () => {
-            this.resetView();
-        });
-        
-        wireframeButton.addEventListener('click', () => {
-            this.toggleWireframe();
-        });
-        
-        fullscreenButton.addEventListener('click', () => {
-            this.toggleFullscreen();
-        });
     }
     
     loadTestModel() {
@@ -179,6 +185,9 @@ class ModelViewer {
             this.scene.remove(this.currentModel);
         }
         
+        // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
+        this.clickableObjects = [];
+        
         // Create a test 3D model (complex geometry)
         const group = new THREE.Group();
         
@@ -188,6 +197,7 @@ class ModelViewer {
         const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
         cube.castShadow = true;
         cube.receiveShadow = true;
+        cube.name = 'Cubo_Principale';
         group.add(cube);
         
         // Smaller cubes around
@@ -204,6 +214,7 @@ class ModelViewer {
             );
             smallCube.castShadow = true;
             smallCube.receiveShadow = true;
+            smallCube.name = `Cubo_${i+1}`;
             group.add(smallCube);
         }
         
@@ -218,6 +229,7 @@ class ModelViewer {
         sphere.position.set(0, 3, 0);
         sphere.castShadow = true;
         sphere.receiveShadow = true;
+        sphere.name = 'Sfera_Centrale';
         group.add(sphere);
         
         this.currentModel = group;
@@ -431,29 +443,6 @@ class ModelViewer {
                 }
             }, 1000);
             
-            // Mostra un messaggio informativo sulla possibilità di rendere gli oggetti cliccabili
-            const makeClickableMsg = `Modello caricato! Per rendere parti del modello cliccabili, usa i metodi makeObjectClickable() o makeModelPartsClickable().`;
-            console.info(makeClickableMsg);
-            
-            // Mostra un esempio di utilizzo nella console
-            console.info(`
-Esempio di utilizzo nella console:
-
-// Rendi cliccabili tutti gli oggetti di un certo tipo
-viewer.makeModelPartsClickable(
-  { geometryType: 'box' }, // Criteri di selezione (box, sphere, cylinder, plane)
-  (obj) => { alert('Hai cliccato su: ' + obj.name); }, // Funzione da eseguire al click
-  'Clicca su {name}' // Tooltip (opzionale)
-);
-
-// Rendi cliccabile un oggetto specifico per nome
-viewer.makeModelPartsClickable(
-  { name: 'nome_oggetto' },
-  (obj) => { obj.material.color.set(0xff0000); }, // Cambia colore al click
-  'Clicca per cambiare colore'
-);
-`);
-            
             // Aggiungi la variabile viewer all'oggetto window per consentire l'accesso dalla console
             window.viewer = this;
             
@@ -463,11 +452,6 @@ viewer.makeModelPartsClickable(
             modelInfo.innerHTML = `
                 <h3>Modello ${modelType} caricato con successo!</h3>
                 <p>Questo modello contiene ${meshCount} elementi.</p>
-                <p>Per rendere parti del modello cliccabili, puoi usare la console del browser (F12) e i seguenti metodi:</p>
-                <ul>
-                    <li><code>viewer.makeModelPartsClickable({geometryType: 'box'}, callback)</code> - per rendere cliccabili tutti i cubi</li>
-                    <li><code>viewer.makeModelPartsClickable({name: 'nome_parte'}, callback)</code> - per rendere cliccabile un elemento specifico</li>
-                </ul>
                 <button id="close-info">Chiudi</button>
             `;
             document.body.appendChild(modelInfo);
@@ -494,11 +478,6 @@ viewer.makeModelPartsClickable(
                         margin-top: 0;
                         color: #4CAF50;
                     }
-                    .model-info code {
-                        background: rgba(255, 255, 255, 0.2);
-                        padding: 2px 4px;
-                        border-radius: 3px;
-                    }
                     .model-info button {
                         background: #4CAF50;
                         border: none;
@@ -520,12 +499,12 @@ viewer.makeModelPartsClickable(
                 document.body.removeChild(modelInfo);
             });
             
-            // Chiudi automaticamente il messaggio dopo 30 secondi
+            // Chiudi automaticamente il messaggio dopo 10 secondi
             setTimeout(() => {
                 if (document.body.contains(modelInfo)) {
                     document.body.removeChild(modelInfo);
                 }
-            }, 30000);
+            }, 10000);
         }, 100); // Small delay to allow UI update
     }
     
@@ -894,7 +873,7 @@ viewer.makeModelPartsClickable(
             }
         });
         
-        const button = document.getElementById('wireframe');
+        const button = document.getElementById('wireframeBtn');
         button.textContent = this.isWireframe ? 'Solido' : 'Wireframe';
     }
     

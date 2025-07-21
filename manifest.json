@@ -41,8 +41,12 @@
   "features": [
     "3D model viewing",
     "Touch controls",
-    "FBX format support",
-    "Offline capable"
+    "Multi-format support (FBX, OBJ, GLTF/GLB)",
+    "Offline capable",
+    "Clickable objects",
+    "Haptic feedback",
+    "Adaptive orientation",
+    "Auto-updates"
   ],
   "prefer_related_applications": false
 }
