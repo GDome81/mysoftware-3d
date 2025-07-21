@@ -96,6 +96,47 @@ header {
     background-color: #ddd;
 }
 
+/* Stile per la lista dei layer */
+.layers-list {
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.no-layers {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.layer-item:last-child {
+    border-bottom: none;
+}
+
+.layer-checkbox {
+    margin-right: 10px;
+}
+
+.layer-name {
+    flex-grow: 1;
+}
+
+.layer-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-left: 10px;
+    border: 1px solid #ddd;
+}
+
 /* Rimosso il comportamento hover per i dropdown, ora gestito da JavaScript */
 /* .dropdown:hover .dropdown-content {
     display: block;

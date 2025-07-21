@@ -11,9 +11,111 @@ class ModelViewer {
         this.mouse = null;
         this.clickableObjects = [];
         this.hoveredObject = null;
+        this.modelLayers = {}; // Oggetto per memorizzare i layer del modello
+        this.layerColors = {}; // Colori associati ai layer
         
         this.init();
         this.setupEventListeners();
+    }
+    
+    // Funzioni per la gestione dei layer
+    createLayersFromModel(model) {
+        this.modelLayers = {};
+        this.layerColors = {};
+        
+        if (!model) return;
+        
+        // Analizza il modello e crea layer basati sui nomi degli oggetti
+        model.traverse((child) => {
+            if (child.isMesh && child.name) {
+                // Estrae il nome del layer dal nome dell'oggetto
+                let layerName = this.extractLayerName(child.name);
+                
+                if (!this.modelLayers[layerName]) {
+                    this.modelLayers[layerName] = [];
+                    // Assegna un colore casuale al layer
+                    this.layerColors[layerName] = this.generateRandomColor();
+                }
+                
+                this.modelLayers[layerName].push(child);
+                // Aggiungi riferimento al layer nell'oggetto
+                child.userData.layer = layerName;
+            }
+        });
+        
+        this.updateLayersUI();
+    }
+    
+    extractLayerName(objectName) {
+        // Estrae il nome del layer dal nome dell'oggetto
+        // Esempi: "Cubo_1" -> "Cubo", "Sfera_Centrale" -> "Sfera", "Engine_Part_01" -> "Engine"
+        if (objectName.includes('_')) {
+            return objectName.split('_')[0];
+        }
+        return objectName;
+    }
+    
+    generateRandomColor() {
+        const colors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+    
+    toggleLayerVisibility(layerName, visible) {
+        if (!this.modelLayers[layerName]) return;
+        
+        this.modelLayers[layerName].forEach(object => {
+            object.visible = visible;
+        });
+    }
+    
+    updateLayersUI() {
+        const layersList = document.getElementById('layersList');
+        const noLayersMsg = layersList.querySelector('.no-layers');
+        
+        // Rimuovi il messaggio "nessun layer"
+        if (noLayersMsg) {
+            noLayersMsg.remove();
+        }
+        
+        // Pulisci la lista esistente
+        layersList.innerHTML = '';
+        
+        // Se non ci sono layer, mostra il messaggio
+        if (Object.keys(this.modelLayers).length === 0) {
+            layersList.innerHTML = '<p class="no-layers">Nessun layer disponibile</p>';
+            return;
+        }
+        
+        // Aggiungi ogni layer alla lista
+        Object.keys(this.modelLayers).forEach(layerName => {
+            const layerItem = document.createElement('div');
+            layerItem.className = 'layer-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'layer-checkbox';
+            checkbox.checked = true;
+            checkbox.addEventListener('change', (e) => {
+                this.toggleLayerVisibility(layerName, e.target.checked);
+            });
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'layer-name';
+            nameSpan.textContent = `${layerName} (${this.modelLayers[layerName].length})`;
+            
+            const colorDiv = document.createElement('div');
+            colorDiv.className = 'layer-color';
+            colorDiv.style.backgroundColor = this.layerColors[layerName];
+            
+            layerItem.appendChild(checkbox);
+            layerItem.appendChild(nameSpan);
+            layerItem.appendChild(colorDiv);
+            
+            layersList.appendChild(layerItem);
+        });
     }
     
     init() {
@@ -300,6 +402,39 @@ class ModelViewer {
             console.error('Elementi menu Impostazioni non trovati');
         }
         
+        // Gestione menu "Layer"
+        const layersBtn = document.getElementById('layersButton');
+        const layersItems = document.getElementById('layersItems');
+        
+        if (layersBtn && layersItems) {
+            console.log('Configurazione menu Layer');
+            
+            // Gestione click sul pulsante principale
+            layersBtn.onclick = function(e) {
+                console.log('CLICK su Layer');
+                e.stopPropagation();
+                
+                // Chiudi tutti gli altri menu
+                document.querySelectorAll('.menu-items').forEach(menu => {
+                    if (menu !== layersItems) {
+                        menu.classList.remove('show');
+                    }
+                });
+                
+                // Apri/chiudi questo menu
+                layersItems.classList.toggle('show');
+                console.log('Menu Layer cliccato, Stato:', layersItems.classList.contains('show'));
+            };
+            
+            // Previeni la chiusura quando si clicca all'interno del menu
+            layersItems.onclick = function(e) {
+                console.log('Click dentro layersItems');
+                e.stopPropagation();
+            };
+        } else {
+            console.error('Elementi menu Layer non trovati');
+        }
+        
         // Chiudi i menu quando si clicca altrove
         document.onclick = function(e) {
             console.log('Click sul documento');
@@ -478,6 +613,10 @@ class ModelViewer {
         
         this.currentModel = group;
         this.scene.add(group);
+        
+        // Crea i layer dal modello di test
+        console.log('Creazione layer dal modello di test...');
+        this.createLayersFromModel(group);
         
         // Reset camera position
         this.resetView();
@@ -750,6 +889,10 @@ class ModelViewer {
             console.log('Aggiungendo il modello alla scena:', object);
             this.scene.add(object);
             console.log('Modello aggiunto alla scena, oggetti nella scena:', this.scene.children.length);
+            
+            // Crea i layer dal modello caricato
+            console.log('Creazione layer dal modello...');
+            this.createLayersFromModel(object);
             
             // Reset camera position
             console.log('Resettando la vista della camera');
@@ -1213,8 +1356,8 @@ class ModelViewer {
                     // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
                     setTimeout(() => {
                         if (this.currentModel) {
-                            // Rendi cliccabili le parti del motore (limitato a 50 elementi)
-                            const maxClickableElements = 50;
+                            // Rendi cliccabili le parti del motore (aumentato il limite da 50 a 500 elementi)
+                            const maxClickableElements = 500;
                             this.makeModelPartsClickable(
                                 {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
                                 (obj) => {
@@ -1270,203 +1413,9 @@ class ModelViewer {
     // Fine rimozione funzione fetchS3ModelList
     
     // Funzione per aggiornare l'interfaccia con la lista dei modelli
-    updateS3ModelList(models) {
-        const modelListContainer = document.querySelector('.s3-model-list');
-        
-        // Svuota il contenitore
-        modelListContainer.innerHTML = '';
-        
-        // Aggiungi ogni modello alla lista
-        models.forEach(model => {
-            const modelItem = document.createElement('div');
-            modelItem.className = 's3-model-item';
-            modelItem.dataset.model = model.name;
-            
-            modelItem.innerHTML = `
-                <div class="s3-model-info">
-                    <div class="s3-model-name">${model.name}</div>
-                    <div class="s3-model-details">
-                        <span>${model.size}</span> | 
-                        <span>Modificato: ${model.lastModified}</span>
-                    </div>
-                    <div class="s3-model-description">${model.description}</div>
-                </div>
-                <button class="s3-model-load-btn">Carica</button>
-            `;
-            
-            modelListContainer.appendChild(modelItem);
-            
-            // Aggiungi event listener al pulsante di caricamento
-            const loadButton = modelItem.querySelector('.s3-model-load-btn');
-            loadButton.addEventListener('click', () => {
-                this.loadS3Model(model.name);
-                document.getElementById('s3-model-dialog').classList.add('hidden');
-            });
-        });
-    }
+    // Rimossa funzione updateS3ModelList
     
-    loadS3Model(modelName) {
-        const loading = document.getElementById('loading');
-        const instructions = document.getElementById('instructions');
-        
-        loading.classList.remove('hidden');
-        instructions.style.display = 'none';
-        
-        // Crea un oggetto di informazioni di caricamento
-        const loadingText = loading.querySelector('p');
-        loadingText.innerHTML = `Caricamento modello ${modelName} da S3...`;
-        
-        // Aggiungi progress bar
-        const progressBar = document.createElement('div');
-        progressBar.style.cssText = `
-            width: 80%;
-            height: 4px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 2px;
-            margin: 10px auto;
-            overflow: hidden;
-        `;
-        const progressFill = document.createElement('div');
-        progressFill.style.cssText = `
-            width: 0%;
-            height: 100%;
-            background: #2196F3;
-            transition: width 0.3s ease;
-        `;
-        progressBar.appendChild(progressFill);
-        loading.appendChild(progressBar);
-        
-        // Remove existing model
-        if (this.currentModel) {
-            this.scene.remove(this.currentModel);
-        }
-        
-        // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
-        this.clickableObjects = [];
-        
-        // Stima la dimensione del file in base al nome (in un'app reale, verrebbe dal server)
-        let estimatedSize = 5; // Default 5MB
-        if (modelName.includes('engine')) estimatedSize = 12.5;
-        if (modelName.includes('car')) estimatedSize = 18.2;
-        if (modelName.includes('transmission')) estimatedSize = 8.7;
-        if (modelName.includes('suspension')) estimatedSize = 5.3;
-        if (modelName.includes('wheel')) estimatedSize = 3.1;
-        if (modelName.includes('brake')) estimatedSize = 4.8;
-        
-        const loadingInfo = {
-            loading,
-            instructions,
-            loadingText,
-            progressBar,
-            progressFill,
-            fileSizeMB: estimatedSize
-        };
-        
-        // Add timeout for loading
-        const loadingTimeout = setTimeout(() => {
-            console.warn('Timeout caricamento - il file potrebbe essere troppo complesso');
-            loading.classList.add('hidden');
-            instructions.style.display = 'block';
-            if (progressBar.parentNode) {
-                progressBar.parentNode.removeChild(progressBar);
-            }
-            loadingText.innerHTML = 'Caricamento modello...';
-            alert('Timeout durante il caricamento del modello da S3.');
-        }, 60000); // 1 minuto timeout
-        
-        try {
-            console.log(`Inizializzazione GLTFLoader con DRACOLoader per modello S3 ${modelName}...`);
-            const loader = new THREE.GLTFLoader();
-            
-            // Configurazione DRACOLoader per ottimizzazione mobile
-            const dracoLoader = new THREE.DRACOLoader();
-            // Imposta il percorso per i file del decoder Draco
-            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
-            // Usa WebAssembly di default per prestazioni migliori
-            dracoLoader.setDecoderConfig({ type: 'wasm' });
-            // Collega DRACOLoader a GLTFLoader
-            loader.setDRACOLoader(dracoLoader);
-            
-            console.log('GLTFLoader con DRACOLoader inizializzato con successo');
-            
-            // Costruisci l'URL del modello nel bucket S3 pubblico
-            console.log(`Tentativo di caricamento del modello ${modelName} dal bucket S3 pubblico`);
-            const bucketName = 'eng-3d-model-test';
-            const region = 'eu-west-1';
-            const modelUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${modelName}`;
-            
-            // Inizializza il progresso di caricamento
-            progressFill.style.width = '0%';
-            loadingText.innerHTML = `
-                Caricamento modello ${modelName} da S3...<br>
-                <small>Connessione al server...</small>
-            `;
-            
-            loader.load(
-                modelUrl, // Usa l'URL del bucket S3 pubblico
-                (gltf) => {
-                    console.log(`Modello S3 ${modelName} caricato con successo:`, gltf);
-                    progressFill.style.width = '100%';
-                    // GLTF loader returns a different structure than FBX and OBJ loaders
-                    const object = gltf.scene || gltf.scenes[0];
-                    this.processLoadedModel(object, loadingInfo, null, loadingTimeout, modelName);
-                    // Rilascia la memoria del decoder quando non è più necessario
-                    dracoLoader.dispose();
-                    
-                    // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
-                    setTimeout(() => {
-                        if (this.currentModel) {
-                            // Rendi cliccabili le parti del modello (limitato a 50 elementi)
-                            const maxClickableElements = 50;
-                            this.makeModelPartsClickable(
-                                {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
-                                (obj) => {
-                                    // Quando l'utente clicca su una parte, mostra il nome
-                                    alert(`Hai cliccato su: ${obj.name}`);
-                                    // Cambia colore quando viene cliccato
-                                    if (obj.material) {
-                                        obj.material.color.set(Math.random() * 0xffffff);
-                                    }
-                                },
-                                'Clicca per interagire con {name}',
-                                maxClickableElements
-                            );
-                            // Elementi cliccabili creati senza mostrare messaggi
-                        }
-                    }, 500);
-                },
-                (progress) => {
-                    if (progress.lengthComputable) {
-                        const percentComplete = (progress.loaded / progress.total) * 100;
-                        progressFill.style.width = percentComplete + '%';
-                        const loadedMB = (progress.loaded / (1024 * 1024)).toFixed(1);
-                        const totalMB = (progress.total / (1024 * 1024)).toFixed(1);
-                        loadingText.innerHTML = `
-                            Caricamento modello ${modelName} da S3...<br>
-                            <small>${loadedMB}MB / ${totalMB}MB (${percentComplete.toFixed(1)}%)</small>
-                        `;
-                    }
-                },
-                (error) => {
-                    console.error(`Errore nel caricamento del modello S3 ${modelName}:`, error);
-                    loading.classList.add('hidden');
-                    instructions.style.display = 'block';
-                    if (progressBar.parentNode) {
-                        progressBar.parentNode.removeChild(progressBar);
-                    }
-                    loadingText.innerHTML = 'Caricamento modello...';
-                    alert(`Errore durante il caricamento del modello S3 ${modelName}: ${error.message}`);
-                    // Rilascia la memoria del decoder in caso di errore
-                    dracoLoader.dispose();
-                }
-            );
-        } catch (e) {
-            console.error('Errore durante l\'inizializzazione di GLTFLoader:', e);
-            alert('Errore durante l\'inizializzazione di GLTFLoader: ' + e.message);
-            loading.classList.add('hidden');
-            instructions.style.display = 'block';
-        }
-    }
+    // Rimossa funzione loadS3Model
     
     resetView() {
         if (this.currentModel) {
@@ -2470,8 +2419,8 @@ class ModelViewer {
         
         // Rendi cliccabile la sfera nel modello di test
         if (this.currentModel) {
-            // Limita il numero di elementi cliccabili
-            const maxClickableElements = 50;
+            // Aumentato il limite di elementi cliccabili da 50 a 500
+            const maxClickableElements = 500;
             let clickableCount = 0;
             
             let sphere = null;
