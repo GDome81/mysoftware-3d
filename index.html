@@ -35,7 +35,7 @@
                             <button id="uploadModelBtn" class="menu-item">Carica File</button>
                             <button id="testModelBtn" class="menu-item">Modello Test</button>
                             <button id="engineModelBtn" class="menu-item">Motore V8</button>
-                            <button id="s3ModelBtn" class="menu-item">Carica da S3</button>
+                            <!-- Rimosso caricamento da S3 -->
                         </div>
                     </div>
                     <div class="menu-group">
@@ -64,27 +64,7 @@
                 </div>
                 <div id="object-tooltip" class="hidden"></div>
                 
-                <!-- S3 Model Dialog -->
-                <div id="s3-model-dialog" class="s3-model-dialog hidden">
-                    <div class="s3-model-container">
-                        <div class="s3-model-header">
-                            <h2>Seleziona un modello da S3</h2>
-                            <button class="s3-model-close" id="s3-model-close">&times;</button>
-                        </div>
-                        <div class="s3-model-list">
-                            <!-- I modelli verranno caricati dinamicamente qui -->
-                            <div class="s3-model-loading" id="s3-model-loading">
-                                <div class="spinner"></div>
-                                <p>Caricamento modelli da S3...</p>
-                            </div>
-                        </div>
-                        <div class="s3-model-custom">
-                            <h3>Modello personalizzato</h3>
-                            <input type="text" id="s3-model-custom-input" placeholder="Nome del modello (es. mymodel.glb)">
-                            <button id="s3-model-custom-load-btn">Carica modello personalizzato</button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Rimosso dialogo S3 -->
             </div>
         </main>
         

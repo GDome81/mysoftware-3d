@@ -146,7 +146,7 @@ class ModelViewer {
         const uploadModelBtn = document.getElementById('uploadModelBtn');
         const testModelBtn = document.getElementById('testModelBtn');
         const engineModelBtn = document.getElementById('engineModelBtn');
-        const s3ModelBtn = document.getElementById('s3ModelBtn');
+        // Rimossa dichiarazione s3ModelBtn
         const resetViewBtn = document.getElementById('resetViewBtn');
         const wireframeBtn = document.getElementById('wireframeBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -201,7 +201,7 @@ class ModelViewer {
             const uploadModelBtn = document.getElementById('uploadModelBtn');
             const testModelBtn = document.getElementById('testModelBtn');
             const engineModelBtn = document.getElementById('engineModelBtn');
-            const s3ModelBtn = document.getElementById('s3ModelBtn');
+            // Rimossa dichiarazione s3ModelBtn
             
             if (uploadModelBtn) {
                 uploadModelBtn.onclick = (e) => {
@@ -230,14 +230,7 @@ class ModelViewer {
                 };
             }
             
-            if (s3ModelBtn) {
-                s3ModelBtn.onclick = (e) => {
-                    console.log('Click su Carica da S3');
-                    e.stopPropagation();
-                    this.openS3ModelDialog();
-                    closeAllMenus();
-                };
-            }
+            // Rimosso gestore eventi per il pulsante S3
         } else {
             console.error('Elementi menu Carica Modello non trovati');
         }
@@ -344,50 +337,9 @@ class ModelViewer {
         //     this.openS3ModelDialog();
         // });
         
-        // Gestione del dialogo S3
-        const s3ModelDialog = document.getElementById('s3-model-dialog');
-        const closeButton = s3ModelDialog ? s3ModelDialog.querySelector('.s3-model-close') : null;
+        // Rimosso codice per la gestione del dialogo S3
         
-        // Chiudi il dialogo quando si clicca sulla X
-        if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                s3ModelDialog.classList.add('hidden');
-            });
-        } else {
-            console.warn('Pulsante di chiusura del dialogo S3 non trovato');
-        }
-        
-        // Chiudi il dialogo quando si clicca fuori dal contenuto
-        if (s3ModelDialog) {
-            s3ModelDialog.addEventListener('click', (e) => {
-                if (e.target === s3ModelDialog) {
-                    s3ModelDialog.classList.add('hidden');
-                }
-            });
-        } else {
-            console.warn('Dialogo S3 non trovato');
-        }
-        
-        // Gestione dei pulsanti di caricamento modelli S3
-        const s3ModelLoadButtons = document.querySelectorAll('.s3-model-load-btn');
-        if (s3ModelLoadButtons.length > 0) {
-            s3ModelLoadButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const modelItem = button.closest('.s3-model-item');
-                    if (modelItem && modelItem.dataset.model) {
-                        const modelName = modelItem.dataset.model;
-                        this.loadS3Model(modelName);
-                        if (s3ModelDialog) {
-                            s3ModelDialog.classList.add('hidden');
-                        }
-                    } else {
-                        console.warn('Informazioni sul modello S3 non trovate');
-                    }
-                });
-            });
-        } else {
-            console.warn('Pulsanti di caricamento modelli S3 non trovati');
-        }
+        // Rimosso codice per la gestione dei pulsanti di caricamento modelli S3
         
         // Gestione del caricamento modello personalizzato da S3
         const s3ModelCustomLoadBtn = document.getElementById('s3-model-custom-load-btn');
@@ -844,7 +796,7 @@ class ModelViewer {
             setTimeout(() => {
                 if (this.currentModel) {
                     // Rendi cliccabili le parti del modello (limitato a 50 elementi)
-                    const maxClickableElements = 50;
+                    const maxClickableElements = 500;
                     this.makeModelPartsClickable(
                         {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
                         (obj) => {
@@ -1312,98 +1264,10 @@ class ModelViewer {
         }
     }
     
-    openS3ModelDialog() {
-        const s3ModelDialog = document.getElementById('s3-model-dialog');
-        
-        // Aggiorna la lista dei modelli S3 con dati reali
-        this.fetchS3ModelList()
-            .then(models => {
-                // Aggiorna l'interfaccia con i modelli disponibili
-                this.updateS3ModelList(models);
-                // Mostra il dialogo
-                s3ModelDialog.classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('Errore nel recupero dei modelli da S3:', error);
-                alert('Errore nel recupero dei modelli da S3. Verifica la connessione di rete.');
-                // Mostra comunque il dialogo con i modelli di esempio
-                s3ModelDialog.classList.remove('hidden');
-            });
-    }
+    // Rimossa funzione openS3ModelDialog
     
-    // Funzione per recuperare la lista dei modelli da S3
-    fetchS3ModelList() {
-        // Recupera la lista dei modelli dal bucket S3 pubblico
-        return new Promise((resolve, reject) => {
-            // Verifica se siamo online
-            if (!navigator.onLine) {
-                reject(new Error('Sei offline. Impossibile recuperare i modelli da S3.'));
-                return;
-            }
-            
-            console.log('Recupero modelli dal bucket S3 pubblico');
-            
-            // Bucket S3 pubblico e regione
-            const bucketName = 'eng-3d-model-test';
-            const region = 'eu-west-1';
-            const bucketUrl = `https://${bucketName}.s3.${region}.amazonaws.com`;
-            
-            // Effettua una richiesta per ottenere la lista degli oggetti nel bucket
-            fetch(`${bucketUrl}?list-type=2`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Errore nella richiesta: ${response.status} ${response.statusText}`);
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    // Analizza la risposta XML
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(data, 'text/xml');
-                    
-                    // Estrai le informazioni sui modelli
-                    const contents = xmlDoc.getElementsByTagName('Contents');
-                    const models = [];
-                    
-                    for (let i = 0; i < contents.length; i++) {
-                        const key = contents[i].getElementsByTagName('Key')[0].textContent;
-                        
-                        // Filtra solo i file .glb
-                        if (key.endsWith('.glb')) {
-                            const size = parseInt(contents[i].getElementsByTagName('Size')[0].textContent);
-                            const lastModified = new Date(contents[i].getElementsByTagName('LastModified')[0].textContent);
-                            
-                            // Formatta le informazioni
-                            const sizeMB = (size / (1024 * 1024)).toFixed(1);
-                            const formattedDate = lastModified.toISOString().split('T')[0];
-                            
-                            // Crea una descrizione basata sul nome del file
-                            let description = 'Modello 3D';
-                            if (key.includes('engine')) description = 'Modello dettagliato di un motore';
-                            if (key.includes('car')) description = 'Modello di automobile';
-                            if (key.includes('transmission')) description = 'Modello di trasmissione';
-                            if (key.includes('suspension')) description = 'Sistema di sospensioni';
-                            if (key.includes('wheel')) description = 'Modello di ruota o cerchione';
-                            if (key.includes('brake')) description = 'Sistema frenante';
-                            
-                            models.push({
-                                name: key,
-                                size: `${sizeMB} MB`,
-                                lastModified: formattedDate,
-                                type: 'glb',
-                                description: description
-                            });
-                        }
-                    }
-                    
-                    resolve(models);
-                })
-                .catch(error => {
-                    console.error('Errore nel recupero dei modelli da S3:', error);
-                    reject(error);
-                });
-        });
-    }
+    // Rimossa funzione fetchS3ModelList
+    // Fine rimozione funzione fetchS3ModelList
     
     // Funzione per aggiornare l'interfaccia con la lista dei modelli
     updateS3ModelList(models) {
