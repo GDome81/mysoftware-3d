@@ -120,6 +120,15 @@ class ModelViewer {
         });
         loadButton.parentNode.appendChild(testButton);
         
+        // Aggiungi pulsante per modello GLB di esempio
+        const exampleGlbButton = document.createElement('button');
+        exampleGlbButton.textContent = 'Motore V8';
+        exampleGlbButton.style.marginLeft = '10px';
+        exampleGlbButton.addEventListener('click', () => {
+            this.loadExampleGlbModel();
+        });
+        loadButton.parentNode.appendChild(exampleGlbButton);
+        
         // Aggiungi event listener per il pulsante modello cliccabile
         const clickableModelButton = document.getElementById('clickableModel');
         if (clickableModelButton) {
@@ -730,6 +739,125 @@ viewer.makeModelPartsClickable(
             alert('Errore durante l\'inizializzazione di GLTFLoader: ' + e.message);
             loadingInfo.loading.classList.add('hidden');
             loadingInfo.instructions.style.display = 'block';
+        }
+    }
+    
+    loadExampleGlbModel() {
+        const loading = document.getElementById('loading');
+        const instructions = document.getElementById('instructions');
+        
+        loading.classList.remove('hidden');
+        instructions.style.display = 'none';
+        
+        // Crea un oggetto di informazioni di caricamento simulato
+        const loadingText = loading.querySelector('p');
+        loadingText.innerHTML = 'Caricamento modello Motore V8...';
+        
+        // Aggiungi progress bar
+        const progressBar = document.createElement('div');
+        progressBar.style.cssText = `
+            width: 80%;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            margin: 10px auto;
+            overflow: hidden;
+        `;
+        const progressFill = document.createElement('div');
+        progressFill.style.cssText = `
+            width: 0%;
+            height: 100%;
+            background: #2196F3;
+            transition: width 0.3s ease;
+        `;
+        progressBar.appendChild(progressFill);
+        loading.appendChild(progressBar);
+        
+        // Remove existing model
+        if (this.currentModel) {
+            this.scene.remove(this.currentModel);
+        }
+        
+        const loadingInfo = {
+            loading,
+            instructions,
+            loadingText,
+            progressBar,
+            progressFill,
+            fileSizeMB: 5 // Dimensione stimata del file
+        };
+        
+        // Add timeout for loading
+        const loadingTimeout = setTimeout(() => {
+            console.warn('Timeout caricamento - il file potrebbe essere troppo complesso');
+            loading.classList.add('hidden');
+            instructions.style.display = 'block';
+            if (progressBar.parentNode) {
+                progressBar.parentNode.removeChild(progressBar);
+            }
+            loadingText.innerHTML = 'Caricamento modello...';
+            alert('Timeout durante il caricamento del modello di esempio.');
+        }, 60000); // 1 minuto timeout
+        
+        try {
+            console.log('Inizializzazione GLTFLoader per modello di esempio...');
+            const loader = new THREE.GLTFLoader();
+            console.log('GLTFLoader inizializzato con successo');
+            
+            // Simula il progresso di caricamento
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress <= 100) {
+                    progressFill.style.width = progress + '%';
+                    loadingText.innerHTML = `
+                        Caricamento modello Motore V8...<br>
+                        <small>${(progress / 100 * loadingInfo.fileSizeMB).toFixed(1)}MB / ${loadingInfo.fileSizeMB.toFixed(1)}MB (${progress}%)</small>
+                    `;
+                } else {
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+            
+            loader.load(
+                'disassembled_v8_engine_block.glb',
+                (gltf) => {
+                    console.log('Modello di esempio caricato con successo:', gltf);
+                    clearInterval(progressInterval);
+                    progressFill.style.width = '100%';
+                    // GLTF loader returns a different structure than FBX and OBJ loaders
+                    const object = gltf.scene || gltf.scenes[0];
+                    this.processLoadedModel(object, loadingInfo, null, loadingTimeout, 'Motore V8');
+                },
+                (progress) => {
+                    if (progress.lengthComputable) {
+                        const percentComplete = (progress.loaded / progress.total) * 100;
+                        progressFill.style.width = percentComplete + '%';
+                        const loadedMB = (progress.loaded / (1024 * 1024)).toFixed(1);
+                        const totalMB = (progress.total / (1024 * 1024)).toFixed(1);
+                        loadingText.innerHTML = `
+                            Caricamento modello Motore V8...<br>
+                            <small>${loadedMB}MB / ${totalMB}MB (${percentComplete.toFixed(1)}%)</small>
+                        `;
+                    }
+                },
+                (error) => {
+                    console.error('Errore nel caricamento del modello di esempio:', error);
+                    clearInterval(progressInterval);
+                    loading.classList.add('hidden');
+                    instructions.style.display = 'block';
+                    if (progressBar.parentNode) {
+                        progressBar.parentNode.removeChild(progressBar);
+                    }
+                    loadingText.innerHTML = 'Caricamento modello...';
+                    alert('Errore durante il caricamento del modello di esempio: ' + error.message);
+                }
+            );
+        } catch (e) {
+            console.error('Errore durante l\'inizializzazione di GLTFLoader:', e);
+            alert('Errore durante l\'inizializzazione di GLTFLoader: ' + e.message);
+            loading.classList.add('hidden');
+            instructions.style.display = 'block';
         }
     }
     
