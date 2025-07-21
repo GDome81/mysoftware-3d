@@ -13,6 +13,7 @@ class ModelViewer {
         this.hoveredObject = null;
         this.modelLayers = {}; // Oggetto per memorizzare i layer del modello
         this.layerColors = {}; // Colori associati ai layer
+        this.aggressiveOptimizationsEnabled = true; // Flag per controllare le ottimizzazioni aggressive
         
         this.init();
         this.setupEventListeners();
@@ -371,6 +372,7 @@ class ModelViewer {
             const resetViewBtn = document.getElementById('resetViewBtn');
             const wireframeBtn = document.getElementById('wireframeBtn');
             const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const optimizationsBtn = document.getElementById('optimizationsBtn');
             
             if (resetViewBtn) {
                 resetViewBtn.onclick = function(e) {
@@ -395,6 +397,23 @@ class ModelViewer {
                     console.log('Click su Schermo Intero');
                     e.stopPropagation();
                     toggleFullscreen();
+                    closeAllMenus();
+                };
+            }
+            
+            if (optimizationsBtn) {
+                optimizationsBtn.onclick = (e) => {
+                    console.log('Click su Ottimizzazioni');
+                    e.stopPropagation();
+                    if (this.aggressiveOptimizationsEnabled) {
+                        this.disableAggressiveOptimizations();
+                        optimizationsBtn.textContent = 'Abilita Ottimizzazioni';
+                        alert('Ottimizzazioni aggressive disabilitate. Gli oggetti nascosti sono stati ripristinati.');
+                    } else {
+                        this.enableAggressiveOptimizations();
+                        optimizationsBtn.textContent = 'Disabilita Ottimizzazioni';
+                        alert('Ottimizzazioni aggressive riabilitate.');
+                    }
                     closeAllMenus();
                 };
             }
@@ -1550,11 +1569,11 @@ class ModelViewer {
         const maxMeshesToProcess = 50;
         const meshesToProcess = meshes.slice(0, maxMeshesToProcess);
         
-        // Crea LOD solo per mesh con un numero significativo di vertici
+        // Crea LOD solo per mesh con un numero molto significativo di vertici (soglia aumentata)
         meshesToProcess.forEach(mesh => {
             // Verifica se la mesh ha abbastanza vertici da giustificare un LOD
             const vertexCount = mesh.geometry.attributes.position.count;
-            if (vertexCount > 1000) {
+            if (vertexCount > 5000) {
                 // Crea un oggetto LOD
                 const lod = new THREE.LOD();
                 
@@ -1588,8 +1607,8 @@ class ModelViewer {
                     }
                 }
                 
-                // Aggiungi la mesh semplificata come livello di dettaglio medio
-                lod.addLevel(simplifiedMesh, 10);
+                // Aggiungi la mesh semplificata come livello di dettaglio medio (distanza aumentata)
+                lod.addLevel(simplifiedMesh, 50);
                 
                 // Crea una versione molto semplificata per distanze maggiori
                 const verySimplifiedMesh = new THREE.Mesh(
@@ -1602,8 +1621,8 @@ class ModelViewer {
                 const size = box.getSize(new THREE.Vector3());
                 verySimplifiedMesh.scale.set(size.x, size.y, size.z);
                 
-                // Aggiungi la mesh molto semplificata come livello di dettaglio più basso
-                lod.addLevel(verySimplifiedMesh, 50);
+                // Aggiungi la mesh molto semplificata come livello di dettaglio più basso (distanza molto aumentata)
+                lod.addLevel(verySimplifiedMesh, 200);
                 
                 // Sostituisci la mesh originale con l'oggetto LOD
                 if (mesh.parent) {
@@ -1696,25 +1715,8 @@ class ModelViewer {
                             }
                         });
                         
-                        // Riduci la precisione degli attributi di posizione e normali
-                        if (child.geometry.attributes.position && 
-                            child.geometry.attributes.position.array instanceof Float32Array && 
-                            child.geometry.attributes.position.count > 5000) {
-                            
-                            // Converti da Float32Array a Float16Array (simulato con Int16Array)
-                            const positions = child.geometry.attributes.position.array;
-                            const scale = 1000; // Fattore di scala per preservare precisione
-                            
-                            // Crea un nuovo array con precisione ridotta
-                            const reducedPositions = new Int16Array(positions.length);
-                            for (let i = 0; i < positions.length; i++) {
-                                reducedPositions[i] = Math.round(positions[i] * scale);
-                            }
-                            
-                            // Sostituisci l'attributo originale
-                            child.geometry.setAttribute('position', new THREE.BufferAttribute(reducedPositions, 3));
-                            child.geometry.attributes.position.needsUpdate = true;
-                        }
+                        // RIMOSSO: La conversione da Float32Array a Int16Array causa errori del shader WebGL
+                        // Manteniamo la precisione originale per evitare errori di compilazione shader
                     }
                     
                     // Semplifica drasticamente i materiali
@@ -1751,8 +1753,8 @@ class ModelViewer {
                         }
                     }
                     
-                    // Disabilita oggetti molto piccoli per risparmiare risorse di rendering
-                    if (child.geometry && child.geometry.attributes.position.count < 50) {
+                    // Disabilita solo oggetti estremamente piccoli (solo se le ottimizzazioni aggressive sono abilitate)
+                    if (this.aggressiveOptimizationsEnabled && child.geometry && child.geometry.attributes.position.count < 10) {
                         child.visible = false;
                     }
                 }
@@ -2039,8 +2041,8 @@ class ModelViewer {
                         }
                     }
                     
-                    // Disabilita oggetti non essenziali
-                    if (child.geometry && child.geometry.attributes.position.count < 100) {
+                    // Disabilita solo oggetti estremamente piccoli (solo se le ottimizzazioni aggressive sono abilitate)
+                    if (this.aggressiveOptimizationsEnabled && child.geometry && child.geometry.attributes.position.count < 20) {
                         child.visible = false;
                     }
                     
@@ -2071,6 +2073,41 @@ class ModelViewer {
         }
     }
     
+    // Funzione per disabilitare le ottimizzazioni aggressive e ripristinare la visibilità
+    disableAggressiveOptimizations() {
+        console.log('Disabilitando ottimizzazioni aggressive...');
+        this.aggressiveOptimizationsEnabled = false;
+        
+        if (this.currentModel) {
+            // Ripristina la visibilità di tutti gli oggetti
+            this.currentModel.traverse(child => {
+                if (child.isMesh && !child.visible) {
+                    child.visible = true;
+                }
+            });
+            
+            // Ripristina la qualità del renderer
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.shadowMap.enabled = true;
+            this.lowQualityRendering = false;
+            
+            console.log('Ottimizzazioni aggressive disabilitate e visibilità ripristinata');
+        }
+    }
+    
+    // Funzione per riabilitare le ottimizzazioni aggressive
+    enableAggressiveOptimizations() {
+        console.log('Riabilitando ottimizzazioni aggressive...');
+        this.aggressiveOptimizationsEnabled = true;
+        
+        // Riapplica le ottimizzazioni se necessario
+        if (this.modelSizeMB > 300) {
+            this.applyCriticalModelOptimizations();
+        } else if (this.modelSizeMB > 100) {
+            this.applyLargeModelOptimizations();
+        }
+    }
+
     animate() {
         requestAnimationFrame(() => this.animate());
         
