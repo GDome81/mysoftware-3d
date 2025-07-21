@@ -64,29 +64,23 @@
                 </div>
                 <div id="object-tooltip" class="hidden"></div>
                 
-                <!-- Dialog per la selezione del modello S3 -->
-                <div id="s3-model-dialog" class="modal hidden">
-                    <div class="modal-content">
-                        <span class="close-button">&times;</span>
-                        <h2>Seleziona un modello da S3</h2>
-                        <p>Bucket: eng-3d-model-test</p>
+                <!-- S3 Model Dialog -->
+                <div id="s3-model-dialog" class="s3-model-dialog hidden">
+                    <div class="s3-model-container">
+                        <div class="s3-model-header">
+                            <h2>Seleziona un modello da S3</h2>
+                            <button class="s3-model-close" id="s3-model-close">&times;</button>
+                        </div>
                         <div class="s3-model-list">
-                            <div class="s3-model-item" data-model="engine.glb">
-                                <div class="s3-model-name">engine.glb</div>
-                                <button class="s3-model-load-btn">Carica</button>
+                            <!-- I modelli verranno caricati dinamicamente qui -->
+                            <div class="s3-model-loading" id="s3-model-loading">
+                                <div class="spinner"></div>
+                                <p>Caricamento modelli da S3...</p>
                             </div>
-                            <div class="s3-model-item" data-model="car.glb">
-                                <div class="s3-model-name">car.glb</div>
-                                <button class="s3-model-load-btn">Carica</button>
-                            </div>
-                            <div class="s3-model-item" data-model="robot.glb">
-                                <div class="s3-model-name">robot.glb</div>
-                                <button class="s3-model-load-btn">Carica</button>
-                            </div>
-                            <!-- Aggiungi qui altri modelli disponibili nel bucket S3 -->
                         </div>
                         <div class="s3-model-custom">
-                            <input type="text" id="s3-model-custom-name" placeholder="Nome file (es: model.glb)">
+                            <h3>Modello personalizzato</h3>
+                            <input type="text" id="s3-model-custom-input" placeholder="Nome del modello (es. mymodel.glb)">
                             <button id="s3-model-custom-load-btn">Carica modello personalizzato</button>
                         </div>
                     </div>
@@ -144,9 +138,59 @@
         // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('./sw.js')
                     .then(registration => {
                         console.log('SW registered: ', registration);
+                        
+                        // Verifica se l'app è installabile
+                        let deferredPrompt;
+                        window.addEventListener('beforeinstallprompt', (e) => {
+                            // Impedisci al browser di mostrare automaticamente il prompt
+                            e.preventDefault();
+                            // Salva l'evento per mostrarlo più tardi
+                            deferredPrompt = e;
+                            // Mostra un pulsante di installazione personalizzato
+                            const installButton = document.createElement('button');
+                            installButton.id = 'install-button';
+                            installButton.textContent = 'Installa App';
+                            installButton.style.cssText = `
+                                position: fixed;
+                                bottom: 20px;
+                                right: 20px;
+                                background-color: #2196F3;
+                                color: white;
+                                border: none;
+                                padding: 10px 15px;
+                                border-radius: 4px;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                                cursor: pointer;
+                                z-index: 9999;
+                            `;
+                            document.body.appendChild(installButton);
+                            
+                            // Gestisci il click sul pulsante di installazione
+                            installButton.addEventListener('click', async () => {
+                                // Nascondi il pulsante di installazione
+                                installButton.style.display = 'none';
+                                // Mostra il prompt di installazione
+                                deferredPrompt.prompt();
+                                // Attendi che l'utente risponda al prompt
+                                const { outcome } = await deferredPrompt.userChoice;
+                                console.log(`Risultato installazione: ${outcome}`);
+                                // Resetta la variabile deferredPrompt
+                                deferredPrompt = null;
+                            });
+                        });
+                        
+                        // Rileva quando l'app è stata installata
+                        window.addEventListener('appinstalled', (e) => {
+                            console.log('App installata con successo!');
+                            // Nascondi il pulsante di installazione se presente
+                            const installButton = document.getElementById('install-button');
+                            if (installButton) {
+                                installButton.style.display = 'none';
+                            }
+                        });
                         
                         // Controlla se c'è un aggiornamento del service worker
                         registration.addEventListener('updatefound', () => {

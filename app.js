@@ -101,7 +101,8 @@ class ModelViewer {
     }
     
     setupEventListeners() {
-        const fileInput = document.getElementById('fileInput');
+        // Definiamo fileInput come proprietà della classe per accedervi da altri metodi
+        this.fileInput = document.getElementById('fileInput');
         
         // Gestione dei nuovi menu dropdown
         const uploadModelBtn = document.getElementById('uploadModelBtn');
@@ -165,37 +166,37 @@ class ModelViewer {
             const s3ModelBtn = document.getElementById('s3ModelBtn');
             
             if (uploadModelBtn) {
-                uploadModelBtn.onclick = function(e) {
+                uploadModelBtn.onclick = (e) => {
                     console.log('Click su Carica File');
                     e.stopPropagation();
-                    document.getElementById('fileInput').click();
+                    this.fileInput.click();
                     closeAllMenus();
                 };
             }
             
             if (testModelBtn) {
-                testModelBtn.onclick = function(e) {
+                testModelBtn.onclick = (e) => {
                     console.log('Click su Modello Test');
                     e.stopPropagation();
-                    loadTestModel();
+                    this.loadTestModel();
                     closeAllMenus();
                 };
             }
             
             if (engineModelBtn) {
-                engineModelBtn.onclick = function(e) {
+                engineModelBtn.onclick = (e) => {
                     console.log('Click su Motore V8');
                     e.stopPropagation();
-                    loadEngineModel();
+                    this.loadExampleGlbModel();
                     closeAllMenus();
                 };
             }
             
             if (s3ModelBtn) {
-                s3ModelBtn.onclick = function(e) {
+                s3ModelBtn.onclick = (e) => {
                     console.log('Click su Carica da S3');
                     e.stopPropagation();
-                    openS3Dialog();
+                    this.openS3ModelDialog();
                     closeAllMenus();
                 };
             }
@@ -274,113 +275,156 @@ class ModelViewer {
             closeAllMenus();
         };
         
-        // Carica file
-        uploadModelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            fileInput.click();
-        });
+        // Carica file - Gestore già definito in precedenza
+        // uploadModelBtn.addEventListener('click', (e) => {
+        //     e.preventDefault();
+        //     fileInput.click();
+        // });
         
-        // Modello test (ora con funzionalità cliccabile di default)
-        testModelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Carica il modello test e lo rende cliccabile di default
-            this.loadTestModel();
-            // Aggiungi un breve ritardo per assicurarsi che il modello sia caricato
-            setTimeout(() => {
-                if (this.currentModel) {
-                    this.createClickableTestModel();
-                }
-            }, 100);
-        });
+        // Modello test - Gestore già definito in precedenza
+        // testModelBtn.addEventListener('click', (e) => {
+        //     e.preventDefault();
+        //     // Carica il modello test e lo rende cliccabile di default
+        //     this.loadTestModel();
+        //     // Aggiungi un breve ritardo per assicurarsi che il modello sia caricato
+        //     setTimeout(() => {
+        //         if (this.currentModel) {
+        //             this.createClickableTestModel();
+        //         }
+        //     }, 100);
+        // });
         
-        // Motore V8
-        engineModelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.loadExampleGlbModel();
-        });
+        // Motore V8 - Gestore già definito in precedenza
+        // engineModelBtn.addEventListener('click', (e) => {
+        //     e.preventDefault();
+        //     this.loadExampleGlbModel();
+        // });
         
-        // Carica da S3
-        s3ModelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.openS3ModelDialog();
-        });
+        // Carica da S3 - Gestore già definito in precedenza
+        // s3ModelBtn.addEventListener('click', (e) => {
+        //     e.preventDefault();
+        //     this.openS3ModelDialog();
+        // });
         
         // Gestione del dialogo S3
         const s3ModelDialog = document.getElementById('s3-model-dialog');
-        const closeButton = s3ModelDialog.querySelector('.close-button');
+        const closeButton = s3ModelDialog ? s3ModelDialog.querySelector('.s3-model-close') : null;
         
         // Chiudi il dialogo quando si clicca sulla X
-        closeButton.addEventListener('click', () => {
-            s3ModelDialog.classList.add('hidden');
-        });
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                s3ModelDialog.classList.add('hidden');
+            });
+        } else {
+            console.warn('Pulsante di chiusura del dialogo S3 non trovato');
+        }
         
         // Chiudi il dialogo quando si clicca fuori dal contenuto
-        s3ModelDialog.addEventListener('click', (e) => {
-            if (e.target === s3ModelDialog) {
-                s3ModelDialog.classList.add('hidden');
-            }
-        });
+        if (s3ModelDialog) {
+            s3ModelDialog.addEventListener('click', (e) => {
+                if (e.target === s3ModelDialog) {
+                    s3ModelDialog.classList.add('hidden');
+                }
+            });
+        } else {
+            console.warn('Dialogo S3 non trovato');
+        }
         
         // Gestione dei pulsanti di caricamento modelli S3
         const s3ModelLoadButtons = document.querySelectorAll('.s3-model-load-btn');
-        s3ModelLoadButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modelItem = button.closest('.s3-model-item');
-                const modelName = modelItem.dataset.model;
-                this.loadS3Model(modelName);
-                s3ModelDialog.classList.add('hidden');
+        if (s3ModelLoadButtons.length > 0) {
+            s3ModelLoadButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modelItem = button.closest('.s3-model-item');
+                    if (modelItem && modelItem.dataset.model) {
+                        const modelName = modelItem.dataset.model;
+                        this.loadS3Model(modelName);
+                        if (s3ModelDialog) {
+                            s3ModelDialog.classList.add('hidden');
+                        }
+                    } else {
+                        console.warn('Informazioni sul modello S3 non trovate');
+                    }
+                });
             });
-        });
+        } else {
+            console.warn('Pulsanti di caricamento modelli S3 non trovati');
+        }
         
         // Gestione del caricamento modello personalizzato da S3
         const s3ModelCustomLoadBtn = document.getElementById('s3-model-custom-load-btn');
-        const s3ModelCustomName = document.getElementById('s3-model-custom-name');
+        const s3ModelCustomInput = document.getElementById('s3-model-custom-input');
         
-        s3ModelCustomLoadBtn.addEventListener('click', () => {
-            const modelName = s3ModelCustomName.value.trim();
-            if (modelName) {
-                this.loadS3Model(modelName);
-                s3ModelDialog.classList.add('hidden');
-            } else {
-                alert('Inserisci un nome di file valido.');
-            }
-        });
+        if (s3ModelCustomLoadBtn && s3ModelCustomInput) {
+            s3ModelCustomLoadBtn.addEventListener('click', () => {
+                const modelName = s3ModelCustomInput.value.trim();
+                if (modelName) {
+                    this.loadS3Model(modelName);
+                    if (s3ModelDialog) {
+                        s3ModelDialog.classList.add('hidden');
+                    }
+                } else {
+                    alert('Inserisci un nome di file valido.');
+                }
+            });
+        } else {
+             console.warn('Elementi per il caricamento del modello personalizzato da S3 non trovati');
+         }
         
         // Reset vista
-        resetViewBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.resetView();
-        });
+        if (resetViewBtn) {
+            resetViewBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.resetView();
+            });
+        } else {
+            console.warn('Pulsante Reset Vista non trovato');
+        }
         
         // Wireframe
-        wireframeBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.toggleWireframe();
-        });
+        if (wireframeBtn) {
+            wireframeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleWireframe();
+            });
+        } else {
+            console.warn('Pulsante Wireframe non trovato');
+        }
         
         // Schermo intero
-        fullscreenBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.toggleFullscreen();
-        });
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleFullscreen();
+            });
+        } else {
+            console.warn('Pulsante Schermo Intero non trovato');
+        }
         
         // Gestione del caricamento file
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const fileName = file.name.toLowerCase();
-            
-            if (fileName.endsWith('.fbx')) {
-                this.loadFBXModel(file);
-            } else if (fileName.endsWith('.obj')) {
-                this.loadOBJModel(file);
-            } else if (fileName.endsWith('.gltf') || fileName.endsWith('.glb')) {
-                this.loadGLTFModel(file);
-            } else {
-                alert('Per favore seleziona un file 3D valido (.fbx, .obj, .gltf, .glb).');
-            }
-        });
+        if (this.fileInput) {
+            this.fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                console.log('File selezionato:', file.name);
+                
+                const fileName = file.name.toLowerCase();
+                console.log('Elaborazione file:', fileName);
+                
+                if (fileName.endsWith('.fbx')) {
+                     this.loadFBXModel(file);
+                 } else if (fileName.endsWith('.obj')) {
+                     this.loadOBJModel(file);
+                 } else if (fileName.endsWith('.gltf') || fileName.endsWith('.glb')) {
+                     this.loadGLTFModel(file);
+                 } else {
+                     alert('Per favore seleziona un file 3D valido (.fbx, .obj, .gltf, .glb).');
+                 }
+            });
+        } else {
+            console.warn('Input file non trovato');
+        }
     }
     
     loadTestModel() {
@@ -467,8 +511,11 @@ class ModelViewer {
     
     // Metodo comune per preparare il caricamento di qualsiasi modello 3D
     prepareModelLoading(file) {
+        console.log('Inizio prepareModelLoading per file:', file.name);
         const loading = document.getElementById('loading');
         const instructions = document.getElementById('instructions');
+        
+        console.log('Elementi DOM:', { loading, instructions });
         
         // Check file size
         const fileSizeMB = file.size / (1024 * 1024);
@@ -476,23 +523,30 @@ class ModelViewer {
         
         if (fileSizeMB > 100) {
             const proceed = confirm(`Il file è molto grande (${fileSizeMB.toFixed(2)} MB). Il caricamento potrebbe richiedere diversi minuti e consumare molta memoria. Continuare?\n\nNota: Il limite massimo è 500MB.`);
-            if (!proceed) return null;
+            if (!proceed) {
+                console.log('Utente ha annullato il caricamento del file grande');
+                return null;
+            }
         }
         
         if (fileSizeMB > 500) {
             alert(`File troppo grande (${fileSizeMB.toFixed(2)} MB). Il limite massimo è 500MB. Si consiglia di utilizzare file sotto i 100MB per prestazioni ottimali su dispositivi mobili.`);
+            console.log('File troppo grande, caricamento annullato');
             return null;
         }
         
+        console.log('Mostrando il loader e nascondendo le istruzioni');
         loading.classList.remove('hidden');
         instructions.style.display = 'none';
         
         // Add progress info
         const loadingText = loading.querySelector('p');
+        console.log('Elemento loadingText:', loadingText);
         loadingText.innerHTML = `Caricamento modello...<br><small>${fileSizeMB.toFixed(2)} MB</small>`;
         
         // Remove existing model
         if (this.currentModel) {
+            console.log('Rimuovendo il modello esistente');
             this.scene.remove(this.currentModel);
         }
         
@@ -528,15 +582,26 @@ class ModelViewer {
     
     // Metodo comune per processare un modello 3D dopo il caricamento
     processLoadedModel(object, loadingInfo, url, loadingTimeout, modelType) {
+        console.log('Inizio processLoadedModel con oggetto:', object);
+        console.log('Tipo di modello:', modelType);
+        
+        if (!loadingInfo) {
+            console.error('loadingInfo è null in processLoadedModel');
+            return;
+        }
+        
         const { loading, instructions, loadingText, progressBar, progressFill, fileSizeMB } = loadingInfo;
+        console.log('Elementi estratti da loadingInfo:', { loading, instructions, loadingText, progressBar, progressFill, fileSizeMB });
         
         clearTimeout(loadingTimeout);
         this.currentModel = object;
+        console.log('currentModel impostato:', this.currentModel);
         
         // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
         this.clickableObjects = [];
         
         // Update loading text to show processing
+        console.log('Aggiornamento testo di caricamento per processamento');
         loadingText.innerHTML = `Processamento modello 3D...<br><small>Calcolo geometria e materiali</small>`;
         progressFill.style.width = '100%';
         
@@ -620,28 +685,37 @@ class ModelViewer {
                 }
             });
             
+            console.log('Aggiungendo il modello alla scena:', object);
             this.scene.add(object);
+            console.log('Modello aggiunto alla scena, oggetti nella scena:', this.scene.children.length);
             
             // Reset camera position
+            console.log('Resettando la vista della camera');
             this.resetView();
             
             console.log('Nascondendo il loader...');
             loading.classList.add('hidden');
             console.log('Loader nascosto:', loading.classList.contains('hidden'));
+            console.log('Mostrando le istruzioni');
             instructions.style.display = 'block';
             
             // Clean up progress bar and URL
+            console.log('Pulizia elementi UI');
             if (progressBar.parentNode) {
                 progressBar.parentNode.removeChild(progressBar);
+                console.log('Progress bar rimossa');
             }
+            console.log('Revoca URL oggetto:', url);
             URL.revokeObjectURL(url);
             
             console.log(`Modello ${modelType} caricato con successo!`);
             
             // Check memory usage
+            console.log('Controllo utilizzo memoria');
             this.checkMemoryUsage(fileSizeMB);
             
             // Reset loading text
+            console.log('Reset testo di caricamento');
             loadingText.innerHTML = 'Caricamento modello...';
             
             // Verifica che il loader sia effettivamente nascosto
@@ -911,9 +985,14 @@ class ModelViewer {
     loadGLTFModel(file) {
         console.log('Caricamento file GLTF/GLB:', file.name);
         const loadingInfo = this.prepareModelLoading(file);
-        if (!loadingInfo) return;
+        console.log('loadingInfo:', loadingInfo);
+        if (!loadingInfo) {
+            console.error('loadingInfo è null, uscita dal metodo loadGLTFModel');
+            return;
+        }
         
         const url = URL.createObjectURL(file);
+        console.log('URL creato:', url);
         
         // Add timeout for loading
         const loadingTimeout = setTimeout(() => {
@@ -939,6 +1018,7 @@ class ModelViewer {
                     console.log('GLTF/GLB caricato con successo:', gltf);
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
+                    console.log('Oggetto estratto da gltf:', object);
                     this.processLoadedModel(object, loadingInfo, url, loadingTimeout, 'GLTF/GLB');
                 },
                 (progress) => this.handleLoadingProgress(progress, loadingInfo),

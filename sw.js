@@ -1,29 +1,29 @@
-const CACHE_NAME = 'model-viewer-v2';
-const STATIC_CACHE = 'static-cache-v2';
-const DYNAMIC_CACHE = 'dynamic-cache-v2';
-const MODEL_CACHE = 'model-cache-v2';
+const CACHE_NAME = 'model-viewer-v3';
+const STATIC_CACHE = 'static-cache-v3';
+const DYNAMIC_CACHE = 'dynamic-cache-v3';
+const MODEL_CACHE = 'model-cache-v3';
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/offline.html',
-  '/offline.svg',
-  '/styles.css',
-  '/app.js',
-  '/mobile.js',
-  '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
-  '/splash-640x1136.png',
-  '/splash-750x1334.png',
-  '/splash-1242x2208.png',
-  '/splash-1125x2436.png',
-  '/splash-1536x2048.png',
-  '/splash-1668x2224.png',
-  '/splash-2048x2732.png',
-  '/screenshot-wide.svg',
-  '/screenshot-narrow.svg',
-  '/disassembled_v8_engine_block.glb'
+  './',
+  './index.html',
+  './offline.html',
+  './offline.svg',
+  './styles.css',
+  './app.js',
+  './mobile.js',
+  './manifest.json',
+  './icon-192x192.png',
+  './icon-512x512.png',
+  './splash-640x1136.png',
+  './splash-750x1334.png',
+  './splash-1242x2208.png',
+  './splash-1125x2436.png',
+  './splash-1536x2048.png',
+  './splash-1668x2224.png',
+  './splash-2048x2732.png',
+  './screenshot-wide.svg',
+  './screenshot-narrow.svg',
+  './disassembled_v8_engine_block.glb'
 ];
 
 const EXTERNAL_ASSETS = [
@@ -50,7 +50,7 @@ self.addEventListener('install', (event) => {
           return cache.addAll(STATIC_ASSETS);
         }),
       // Cache external libraries
-      caches.open(EXTERNAL_ASSETS)
+      caches.open(DYNAMIC_CACHE)
         .then(cache => {
           console.log('Service Worker: Caching external libraries');
           return cache.addAll(EXTERNAL_ASSETS);
