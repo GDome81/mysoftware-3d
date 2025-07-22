@@ -15,6 +15,7 @@ class ModelViewer {
         this.modelLayers = {}; // Oggetto per memorizzare i layer del modello
         this.layerColors = {}; // Colori associati ai layer
         this.aggressiveOptimizationsEnabled = true; // Flag per controllare le ottimizzazioni aggressive
+        this.isLoading = false; // Flag per prevenire caricamenti simultanei
         
         this.init();
         this.setupEventListeners();
@@ -513,6 +514,17 @@ class ModelViewer {
                 };
             }
             
+            // Gestione del pulsante Refresh (Svuota Visualizzatore)
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.onclick = (e) => {
+                    console.log('Click su Svuota Visualizzatore');
+                    e.stopPropagation();
+                    this.clearScene();
+                    closeAllMenus();
+                };
+            }
+            
             if (wireframeBtn) {
                 wireframeBtn.onclick = function(e) {
                     console.log('Click su Wireframe');
@@ -693,10 +705,23 @@ class ModelViewer {
                 const file = event.target.files[0];
                 if (!file) return;
                 
+                // Previeni caricamenti simultanei
+                if (this.isLoading) {
+                    console.warn('Caricamento già in corso. Attendere il completamento.');
+                    alert('Caricamento già in corso. Attendere il completamento o utilizzare il pulsante "Svuota Visualizzatore" per annullare.');
+                    return;
+                }
+                
                 console.log('File selezionato:', file.name);
                 
                 const fileName = file.name.toLowerCase();
                 console.log('Elaborazione file:', fileName);
+                
+                // Imposta il flag di caricamento
+                this.isLoading = true;
+                
+                // Aggiorna lo stato del pulsante di caricamento
+                this.updateUploadButtonState();
                 
                 if (fileName.endsWith('.fbx')) {
                      this.loadFBXModel(file);
@@ -706,6 +731,8 @@ class ModelViewer {
                      this.loadGLTFModel(file);
                  } else {
                      alert('Per favore seleziona un file 3D valido (.fbx, .obj, .gltf, .glb).');
+                     this.isLoading = false; // Reimposta il flag se il file non è valido
+                     this.updateUploadButtonState(); // Aggiorna lo stato del pulsante
                  }
             });
         } else {
@@ -731,6 +758,8 @@ class ModelViewer {
             const proceed = confirm(`Il file è molto grande (${fileSizeMB.toFixed(2)} MB). Il caricamento potrebbe richiedere diversi minuti e consumare molta memoria. Continuare?\n\nNota: Il limite massimo è 500MB.`);
             if (!proceed) {
                 console.log('Utente ha annullato il caricamento del file grande');
+                this.isLoading = false; // Reimposta il flag di caricamento se l'utente annulla
+                this.updateUploadButtonState(); // Aggiorna lo stato del pulsante
                 return null;
             }
         }
@@ -738,6 +767,8 @@ class ModelViewer {
         if (fileSizeMB > 500) {
             alert(`File troppo grande (${fileSizeMB.toFixed(2)} MB). Il limite massimo è 500MB. Si consiglia di utilizzare file sotto i 100MB per prestazioni ottimali su dispositivi mobili.`);
             console.log('File troppo grande, caricamento annullato');
+            this.isLoading = false; // Reimposta il flag di caricamento se il file è troppo grande
+            this.updateUploadButtonState(); // Aggiorna lo stato del pulsante
             return null;
         }
         
@@ -1036,64 +1067,13 @@ class ModelViewer {
                 }
             }, 500);
             
-            // Mostra un messaggio informativo all'utente
-            const modelInfo = document.createElement('div');
-            modelInfo.className = 'model-info';
-            modelInfo.innerHTML = `
-                <h3>Modello ${modelType} caricato con successo!</h3>
-                <button id="close-info">Chiudi</button>
-            `;
-            document.body.appendChild(modelInfo);
+            // Resetta il flag di caricamento
+            this.isLoading = false;
             
-            // Aggiungi stile per il messaggio informativo se non esiste già
-            if (!document.getElementById('model-info-style')) {
-                const style = document.createElement('style');
-                style.id = 'model-info-style';
-                style.textContent = `
-                    .model-info {
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: rgba(0, 0, 0, 0.8);
-                        color: white;
-                        padding: 15px;
-                        border-radius: 5px;
-                        max-width: 350px;
-                        z-index: 1000;
-                        font-size: 14px;
-                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-                    }
-                    .model-info h3 {
-                        margin-top: 0;
-                        color: #4CAF50;
-                    }
-                    .model-info button {
-                        background: #4CAF50;
-                        border: none;
-                        color: white;
-                        padding: 5px 10px;
-                        border-radius: 3px;
-                        cursor: pointer;
-                        margin-top: 10px;
-                    }
-                    .model-info button:hover {
-                        background: #45a049;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
+            // Aggiorna lo stato del pulsante di caricamento
+            this.updateUploadButtonState();
             
-            // Aggiungi event listener per chiudere il messaggio
-            document.getElementById('close-info').addEventListener('click', () => {
-                document.body.removeChild(modelInfo);
-            });
-            
-            // Chiudi automaticamente il messaggio dopo 10 secondi
-            setTimeout(() => {
-                if (document.body.contains(modelInfo)) {
-                    document.body.removeChild(modelInfo);
-                }
-            }, 10000);
+            // Il messaggio "modello caricato con successo" è stato rimosso
         }, 100); // Small delay to allow UI update
     }
     
@@ -1124,6 +1104,12 @@ class ModelViewer {
             : `Errore nel caricamento del modello ${modelType}. Verifica che il file sia valido.`;
                 
         alert(errorMsg);
+        
+        // Resetta il flag di caricamento
+        this.isLoading = false;
+        
+        // Aggiorna lo stato del pulsante di caricamento
+        this.updateUploadButtonState();
         
         // Clean up progress bar and URL
         if (progressBar.parentNode) {
@@ -1826,6 +1812,58 @@ class ModelViewer {
         
         // Salva la preferenza nel localStorage
         localStorage.setItem('theme', this.isDarkBackground ? 'dark' : 'light');
+    }
+    
+    // Funzione per aggiornare lo stato del pulsante di caricamento
+    updateUploadButtonState() {
+        const uploadModelBtn = document.getElementById('uploadModelBtn');
+        if (uploadModelBtn) {
+            if (this.isLoading) {
+                // Disabilita il pulsante durante il caricamento
+                uploadModelBtn.disabled = true;
+                uploadModelBtn.classList.add('disabled');
+                uploadModelBtn.title = 'Caricamento in corso... Attendere';
+            } else {
+                // Riabilita il pulsante quando il caricamento è completato
+                uploadModelBtn.disabled = false;
+                uploadModelBtn.classList.remove('disabled');
+                uploadModelBtn.title = 'Carica un modello 3D';
+            }
+        }
+    }
+    
+    // Funzione per svuotare la scena e rimuovere il modello corrente
+    clearScene() {
+        console.log('Svuotamento della scena...');
+        
+        // Rimuovi il modello corrente dalla scena
+        if (this.currentModel) {
+            console.log('Rimuovendo il modello esistente');
+            this.scene.remove(this.currentModel);
+            this.currentModel = null;
+        }
+        
+        // Reimposta la gerarchia
+        this.modelLayers = {};
+        this.layerColors = {};
+        this.updateHierarchyUI();
+        
+        // Reimposta gli oggetti cliccabili
+        this.clickableObjects = [];
+        
+        // Reimposta il flag di caricamento
+        this.isLoading = false;
+        
+        // Aggiorna lo stato del pulsante di caricamento
+        this.updateUploadButtonState();
+        
+        // Nascondi eventuali tooltip
+        const tooltip = document.getElementById('object-tooltip');
+        if (tooltip) {
+            tooltip.style.display = 'none';
+        }
+        
+        console.log('Scena svuotata con successo');
     }
     
     onWindowResize() {

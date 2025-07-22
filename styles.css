@@ -106,6 +106,16 @@ header {
     background-color: #ddd;
 }
 
+.menu-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.menu-item.disabled:hover {
+    background-color: transparent;
+}
+
 .menu-separator {
     border: none;
     border-top: 1px solid #ddd;
