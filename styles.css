@@ -27,6 +27,7 @@ header {
     align-items: center;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     z-index: 1000;
+    flex-direction: row-reverse;
 }
 
 .menu-container {
@@ -65,9 +66,9 @@ header {
     display: none;
     position: absolute;
     background-color: #f9f9f9;
-    min-width: 160px;
-    max-width: 400px;
-    max-height: calc(100vh - 100px);
+    min-width: 200px;
+    max-width: 450px;
+    max-height: calc(100vh - 80px);
     overflow-y: auto;
     overflow-x: hidden;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
@@ -75,6 +76,12 @@ header {
     border-radius: 5px;
     top: 100%; /* Posiziona sotto il pulsante */
     left: 0;
+}
+
+/* Assicura che tutti i menu si aprano correttamente a sinistra */
+.menu-group .menu-items {
+    left: 0;
+    right: auto;
 }
 
 /* Classe per mostrare il menu */
@@ -281,6 +288,40 @@ header {
 
 .element-btn.remove:hover {
     background: #d32f2f;
+}
+
+.element-btn.show-only {
+    background: #9C27B0;
+}
+
+.element-btn.show-only:hover {
+    background: #7B1FA2;
+}
+
+.layer-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.layer-show-only {
+    background: #9C27B0;
+    color: white;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 50px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.layer-show-only:hover {
+    background: #7B1FA2;
 }
 
 /* Rimosso il comportamento hover per i dropdown, ora gestito da JavaScript */

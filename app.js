@@ -90,6 +90,29 @@ class ModelViewer {
             return;
         }
         
+        // Aggiungi pulsante "Mostra Tutti" se ci sono più layer
+        if (Object.keys(this.modelLayers).length > 1) {
+            const showAllBtn = document.createElement('button');
+            showAllBtn.className = 'menu-item show-all-layers';
+            showAllBtn.textContent = '👁 Mostra Tutti i Livelli';
+            showAllBtn.style.cssText = `
+                background: #4CAF50;
+                color: white;
+                margin-bottom: 10px;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                width: 100%;
+                font-size: 0.9rem;
+            `;
+            showAllBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showAllLayers();
+            });
+            hierarchyTree.appendChild(showAllBtn);
+        }
+        
         // Aggiungi ogni layer alla gerarchia
         Object.keys(this.modelLayers).forEach(layerName => {
             const layerNode = this.createLayerNode(layerName);
@@ -143,9 +166,26 @@ class ModelViewer {
         layerInfo.appendChild(layerCount);
         layerInfo.appendChild(layerColor);
         
+        // Azioni del layer
+        const layerActions = document.createElement('div');
+        layerActions.className = 'layer-actions';
+        
+        // Pulsante "Show Only"
+        const showOnlyBtn = document.createElement('button');
+        showOnlyBtn.className = 'layer-show-only';
+        showOnlyBtn.textContent = 'Solo';
+        showOnlyBtn.title = 'Mostra solo questo livello';
+        showOnlyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showOnlyLayer(layerObjects[0]); // Usa il primo oggetto del layer come riferimento
+        });
+        
+        layerActions.appendChild(showOnlyBtn);
+        
         layerHeader.appendChild(layerToggle);
         layerHeader.appendChild(layerCheckbox);
         layerHeader.appendChild(layerInfo);
+        layerHeader.appendChild(layerActions);
         
         // Contenitore degli elementi
         const layerElements = document.createElement('div');
@@ -403,8 +443,6 @@ class ModelViewer {
             // Configura i pulsanti del menu
             const uploadModelBtn = document.getElementById('uploadModelBtn');
             const testModelBtn = document.getElementById('testModelBtn');
-            const engineModelBtn = document.getElementById('engineModelBtn');
-            // Rimossa dichiarazione s3ModelBtn
             
             if (uploadModelBtn) {
                 uploadModelBtn.onclick = (e) => {
@@ -424,66 +462,8 @@ class ModelViewer {
                 };
             }
             
-            if (engineModelBtn) {
-                engineModelBtn.onclick = (e) => {
-                    console.log('Click su Motore V8');
-                    e.stopPropagation();
-                    this.loadExampleGlbModel();
-                    closeAllMenus();
-                };
-            }
-            
-            // Gestori per i modelli dalla cartella compressor/output
-            const compressedV8Btn = document.getElementById('compressedV8Btn');
-            const originalV8Btn = document.getElementById('originalV8Btn');
-            const porscheBtn = document.getElementById('porscheBtn');
-            const westernPacificBtn = document.getElementById('westernPacificBtn');
-            const yachtEngineBtn = document.getElementById('yachtEngineBtn');
-            
-            if (compressedV8Btn) {
-                compressedV8Btn.onclick = (e) => {
-                    console.log('Click su V8 Engine (Compressed)');
-                    e.stopPropagation();
-                    this.loadCompressorModel('compressed v8 engine.glb');
-                    closeAllMenus();
-                };
-            }
-            
-            if (originalV8Btn) {
-                originalV8Btn.onclick = (e) => {
-                    console.log('Click su V8 Engine (Original)');
-                    e.stopPropagation();
-                    this.loadCompressorModel('original v8 engine.glb');
-                    closeAllMenus();
-                };
-            }
-            
-            if (porscheBtn) {
-                porscheBtn.onclick = (e) => {
-                    console.log('Click su Porsche 911 Turbo');
-                    e.stopPropagation();
-                    this.loadCompressorModel('porsche 911 turbo.glb');
-                    closeAllMenus();
-                };
-            }
-            
-            if (westernPacificBtn) {
-                westernPacificBtn.onclick = (e) => {
-                    console.log('Click su Western Pacific');
-                    e.stopPropagation();
-                    this.loadCompressorModel('western pacific.glb');
-                    closeAllMenus();
-                };
-            }
-            
-            if (yachtEngineBtn) {
-                yachtEngineBtn.onclick = (e) => {
-                    console.log('Click su Yacht Engine');
-                    e.stopPropagation();
-                    this.loadCompressorModel('yacht engine.glb');
-                    closeAllMenus();
-                };
-            }
+            // Carica dinamicamente i modelli dalla cartella compressor/output
+            this.loadDynamicModels();
             
             // Rimosso gestore eventi per il pulsante S3
         } else {
@@ -3274,6 +3254,101 @@ class ModelViewer {
         };
         
         animate();
+    }
+    
+    // Carica dinamicamente i modelli dalla cartella compressor/output
+    async loadDynamicModels() {
+        const dynamicModelsContainer = document.getElementById('dynamicModels');
+        if (!dynamicModelsContainer) return;
+        
+        // Pulisci il contenitore
+        dynamicModelsContainer.innerHTML = '';
+        
+        try {
+            // Lista dei file noti nella cartella compressor/output
+            const knownModels = [
+                'compressed v8 engine.glb',
+                'original v8 engine.glb',
+                'porsche 911 turbo.glb',
+                'western pacific.glb',
+                'yacht engine.glb'
+            ];
+            
+            // Crea pulsanti per ogni modello
+            knownModels.forEach(filename => {
+                const button = document.createElement('button');
+                button.className = 'menu-item';
+                
+                // Crea un nome leggibile dal filename
+                const displayName = filename
+                    .replace('.glb', '')
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                
+                button.textContent = displayName;
+                button.onclick = (e) => {
+                    console.log(`Click su ${displayName}`);
+                    e.stopPropagation();
+                    this.loadCompressorModel(filename);
+                    // Chiudi tutti i menu
+                    document.querySelectorAll('.menu-items').forEach(menu => {
+                        menu.classList.remove('show');
+                    });
+                };
+                
+                dynamicModelsContainer.appendChild(button);
+            });
+            
+        } catch (error) {
+            console.error('Errore nel caricamento dinamico dei modelli:', error);
+        }
+    }
+    
+    // Mostra solo un livello specifico, nascondendo tutti gli altri
+    showOnlyLayer(targetLayerObject) {
+        if (!this.currentModel) return;
+        
+        // Trova il nome del layer dal targetLayerObject
+        let targetLayerName = null;
+        for (const [layerName, objects] of Object.entries(this.modelLayers)) {
+            if (objects.includes(targetLayerObject)) {
+                targetLayerName = layerName;
+                break;
+            }
+        }
+        
+        if (!targetLayerName) {
+            console.warn('Layer non trovato per l\'oggetto specificato');
+            return;
+        }
+        
+        // Nascondi tutti gli oggetti di tutti i layer
+        Object.values(this.modelLayers).forEach(layerObjects => {
+            layerObjects.forEach(obj => {
+                obj.visible = false;
+            });
+        });
+        
+        // Mostra solo gli oggetti del layer target
+        this.modelLayers[targetLayerName].forEach(obj => {
+            obj.visible = true;
+        });
+        
+        console.log(`Mostrato solo il livello: ${targetLayerName}`);
+    }
+    
+    // Ripristina la visibilità di tutti i livelli
+    showAllLayers() {
+        if (!this.currentModel) return;
+        
+        Object.values(this.modelLayers).forEach(layerObjects => {
+            layerObjects.forEach(obj => {
+                obj.visible = true;
+            });
+        });
+        
+        console.log('Ripristinata la visibilità di tutti i livelli');
     }
     
     animate() {
