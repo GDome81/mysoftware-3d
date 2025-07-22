@@ -388,7 +388,6 @@ class ModelViewer {
         
         // Gestione dei nuovi menu dropdown
         const uploadModelBtn = document.getElementById('uploadModelBtn');
-        const testModelBtn = document.getElementById('testModelBtn');
         const engineModelBtn = document.getElementById('engineModelBtn');
         // Rimossa dichiarazione s3ModelBtn
         const resetViewBtn = document.getElementById('resetViewBtn');
@@ -443,22 +442,12 @@ class ModelViewer {
             
             // Configura i pulsanti del menu
             const uploadModelBtn = document.getElementById('uploadModelBtn');
-            const testModelBtn = document.getElementById('testModelBtn');
             
             if (uploadModelBtn) {
                 uploadModelBtn.onclick = (e) => {
                     console.log('Click su Carica File');
                     e.stopPropagation();
                     this.fileInput.click();
-                    closeAllMenus();
-                };
-            }
-            
-            if (testModelBtn) {
-                testModelBtn.onclick = (e) => {
-                    console.log('Click su Modello Test');
-                    e.stopPropagation();
-                    this.loadTestModel();
                     closeAllMenus();
                 };
             }
@@ -714,91 +703,7 @@ class ModelViewer {
         }
     }
     
-    loadTestModel() {
-        const loading = document.getElementById('loading');
-        const instructions = document.getElementById('instructions');
-        
-        loading.classList.remove('hidden');
-        instructions.style.display = 'none';
-        
-        // Remove existing model
-        if (this.currentModel) {
-            this.scene.remove(this.currentModel);
-        }
-        
-        // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
-        this.clickableObjects = [];
-        
-        // Create a test 3D model (complex geometry)
-        const group = new THREE.Group();
-        
-        // Main cube
-        const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
-        const cubeMaterial = new THREE.MeshPhongMaterial({ color: 0x2196F3 });
-        const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        cube.castShadow = true;
-        cube.receiveShadow = true;
-        cube.name = 'Cubo_Principale';
-        group.add(cube);
-        
-        // Smaller cubes around
-        for (let i = 0; i < 8; i++) {
-            const smallCube = new THREE.Mesh(
-                new THREE.BoxGeometry(0.5, 0.5, 0.5),
-                new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff })
-            );
-            const angle = (i / 8) * Math.PI * 2;
-            smallCube.position.set(
-                Math.cos(angle) * 3,
-                Math.sin(angle * 2) * 1.5,
-                Math.sin(angle) * 3
-            );
-            smallCube.castShadow = true;
-            smallCube.receiveShadow = true;
-            smallCube.name = `Cubo_${i+1}`;
-            group.add(smallCube);
-        }
-        
-        // Sphere
-        const sphereGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-        const sphereMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xff6b35,
-            transparent: true,
-            opacity: 0.8
-        });
-        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-        sphere.position.set(0, 3, 0);
-        sphere.castShadow = true;
-        sphere.receiveShadow = true;
-        sphere.name = 'Sfera_Centrale';
-        group.add(sphere);
-        
-        this.currentModel = group;
-        this.scene.add(group);
-        
-        // Crea i layer dal modello di test
-        console.log('Creazione layer dal modello di test...');
-        this.createLayersFromModel(group);
-        
-        // Reset camera position
-        this.resetView();
-        
-        console.log('Nascondendo il loader nel loadTestModel...');
-        loading.classList.add('hidden');
-        console.log('Loader nascosto nel loadTestModel:', loading.classList.contains('hidden'));
-        instructions.style.display = 'block';
-        
-        // Verifica che il loader sia effettivamente nascosto
-        setTimeout(() => {
-            const loaderElement = document.getElementById('loading');
-            if (loaderElement && !loaderElement.classList.contains('hidden')) {
-                console.error('Il loader è ancora visibile dopo il caricamento del modello di test!');
-                loaderElement.classList.add('hidden');
-            }
-        }, 1000);
-        
-        console.log('Modello di test caricato con successo!');
-    }
+
     
     // Metodo comune per preparare il caricamento di qualsiasi modello 3D
     prepareModelLoading(file) {
@@ -1219,12 +1124,10 @@ class ModelViewer {
         // Reset loading text
         loadingText.innerHTML = 'Caricamento modello...';
         
-        // Se il loader non è disponibile, suggerisci il modello di test
+        // Se il loader non è disponibile, mostra un messaggio di errore
         if (error.message.includes(`${loaderName} non disponibile`)) {
             setTimeout(() => {
-                if (confirm('Vuoi caricare un modello di test per vedere come funziona l\'applicazione?')) {
-                    this.loadTestModel();
-                }
+                alert('Loader non disponibile. Prova con un formato di file diverso.');
             }, 500);
         }
     }
@@ -2946,9 +2849,12 @@ class ModelViewer {
         this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     }
     
-    // Esempio di come creare un oggetto cliccabile nel modello di test
+    // Esempio di come creare un oggetto cliccabile nel modello corrente
     createClickableTestModel() {
-        this.loadTestModel();
+        if (!this.currentModel) {
+            console.warn('Nessun modello caricato.');
+            return;
+        }
         
         // Rendi cliccabile la sfera nel modello di test
         if (this.currentModel) {
