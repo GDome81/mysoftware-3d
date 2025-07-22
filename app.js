@@ -1534,11 +1534,11 @@ class ModelViewer {
                             this.makeModelPartsClickable(
                                 {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
                                 (obj) => {
-                                    // Quando l'utente clicca su una parte, mostra il nome
-                                    alert(`Hai cliccato su: ${obj.name}`);
-                                    // Cambia colore quando viene cliccato
-                                    if (obj.material) {
-                                        obj.material.color.set(Math.random() * 0xffffff);
+                                    // Quando l'utente clicca su una parte, sposta il focus su quell'elemento
+                                    this.focusOnElement(obj);
+                                    // Mostra il nome dell'elemento
+                                    if (obj.name) {
+                                        alert(`Elemento selezionato: ${obj.name}`);
                                     }
                                 },
                                 'Clicca per interagire con {name}',
@@ -1578,6 +1578,234 @@ class ModelViewer {
             loading.classList.add('hidden');
             instructions.style.display = 'block';
         }
+    }
+    
+    loadCompressorModel(filename) {
+        const loading = document.getElementById('loading');
+        const instructions = document.getElementById('instructions');
+        
+        loading.classList.remove('hidden');
+        instructions.style.display = 'none';
+        
+        // Crea un oggetto di informazioni di caricamento simulato
+        const loadingText = loading.querySelector('p');
+        const modelName = filename.replace('.glb', '').replace(/[-_]/g, ' ');
+        loadingText.innerHTML = `Caricamento modello ${modelName}...`;
+        
+        // Aggiungi progress bar
+        const progressBar = document.createElement('div');
+        progressBar.style.cssText = `
+            width: 80%;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            margin: 10px auto;
+            overflow: hidden;
+        `;
+        const progressFill = document.createElement('div');
+        progressFill.style.cssText = `
+            width: 0%;
+            height: 100%;
+            background: #2196F3;
+            transition: width 0.3s ease;
+        `;
+        progressBar.appendChild(progressFill);
+        loading.appendChild(progressBar);
+        
+        // Remove existing model
+        if (this.currentModel) {
+            this.scene.remove(this.currentModel);
+        }
+        
+        // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
+        this.clickableObjects = [];
+        
+        const loadingInfo = {
+            loading,
+            instructions,
+            loadingText,
+            progressBar,
+            progressFill,
+            fileSizeMB: 10 // Dimensione stimata del file
+        };
+        
+        // Add timeout for loading
+        const loadingTimeout = setTimeout(() => {
+            console.warn('Timeout caricamento - il file potrebbe essere troppo complesso');
+            loading.classList.add('hidden');
+            instructions.style.display = 'block';
+            if (progressBar.parentNode) {
+                progressBar.parentNode.removeChild(progressBar);
+            }
+            loadingText.innerHTML = 'Caricamento modello...';
+            alert('Timeout durante il caricamento del modello.');
+        }, 60000); // 1 minuto timeout
+        
+        try {
+            console.log(`Inizializzazione GLTFLoader per modello: ${filename}`);
+            const loader = new THREE.GLTFLoader();
+            
+            // Configurazione DRACOLoader per ottimizzazione mobile
+            const dracoLoader = new THREE.DRACOLoader();
+            // Imposta il percorso per i file del decoder Draco
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+            // Usa WebAssembly di default per prestazioni migliori
+            dracoLoader.setDecoderConfig({ type: 'wasm' });
+            // Collega DRACOLoader a GLTFLoader
+            loader.setDRACOLoader(dracoLoader);
+            
+            console.log('GLTFLoader con DRACOLoader inizializzato con successo');
+            
+            // Simula il progresso di caricamento
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress <= 100) {
+                    progressFill.style.width = progress + '%';
+                    loadingText.innerHTML = `
+                        Caricamento modello ${modelName}...<br>
+                        <small>${(progress / 100 * loadingInfo.fileSizeMB).toFixed(1)}MB / ${loadingInfo.fileSizeMB.toFixed(1)}MB (${progress}%)</small>
+                    `;
+                } else {
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+            
+            loader.load(
+                `compressor/output/${filename}`,
+                (gltf) => {
+                    console.log(`Modello ${filename} caricato con successo:`, gltf);
+                    clearInterval(progressInterval);
+                    progressFill.style.width = '100%';
+                    // GLTF loader returns a different structure than FBX and OBJ loaders
+                    const object = gltf.scene || gltf.scenes[0];
+                    this.processLoadedModel(object, loadingInfo, null, loadingTimeout, modelName);
+                    // Rilascia la memoria del decoder quando non è più necessario
+                    dracoLoader.dispose();
+                    
+                    // Rendi il modello cliccabile dopo un breve ritardo per assicurarsi che sia completamente caricato
+                    setTimeout(() => {
+                        if (this.currentModel) {
+                            // Rendi cliccabili le parti del modello
+                            const maxClickableElements = 500;
+                            this.makeModelPartsClickable(
+                                {}, // Nessun criterio specifico, rendi cliccabili tutti gli oggetti mesh
+                                (obj) => {
+                                    // Quando l'utente clicca su una parte, sposta il focus su quell'elemento
+                                    this.focusOnElement(obj);
+                                    // Mostra il nome dell'elemento
+                                    if (obj.name) {
+                                        alert(`Elemento selezionato: ${obj.name}`);
+                                    }
+                                },
+                                'Clicca per focalizzare su {name}',
+                                maxClickableElements
+                            );
+                        }
+                    }, 500);
+                },
+                (progress) => {
+                    if (progress.lengthComputable) {
+                        const percentComplete = (progress.loaded / progress.total) * 100;
+                        progressFill.style.width = percentComplete + '%';
+                        const loadedMB = (progress.loaded / (1024 * 1024)).toFixed(1);
+                        const totalMB = (progress.total / (1024 * 1024)).toFixed(1);
+                        loadingText.innerHTML = `
+                            Caricamento modello ${modelName}...<br>
+                            <small>${loadedMB}MB / ${totalMB}MB (${percentComplete.toFixed(1)}%)</small>
+                        `;
+                    }
+                },
+                (error) => {
+                    console.error(`Errore nel caricamento del modello ${filename}:`, error);
+                    clearInterval(progressInterval);
+                    loading.classList.add('hidden');
+                    instructions.style.display = 'block';
+                    if (progressBar.parentNode) {
+                        progressBar.parentNode.removeChild(progressBar);
+                    }
+                    loadingText.innerHTML = 'Caricamento modello...';
+                    alert(`Errore durante il caricamento del modello ${filename}: ` + error.message);
+                }
+            );
+        } catch (e) {
+            console.error('Errore durante l\'inizializzazione di GLTFLoader:', e);
+            alert('Errore durante l\'inizializzazione di GLTFLoader: ' + e.message);
+            loading.classList.add('hidden');
+            instructions.style.display = 'block';
+        }
+    }
+    
+    focusOnElement(element) {
+        if (!element) return;
+        
+        // Calcola il bounding box dell'elemento
+        const box = new THREE.Box3().setFromObject(element);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        // Calcola la distanza ottimale per visualizzare l'elemento
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const distance = maxDim * 2.5; // Distanza per vedere bene l'elemento
+        
+        // Calcola la nuova posizione della camera
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        direction.negate(); // Inverti la direzione per guardare verso l'elemento
+        
+        const newPosition = center.clone().add(direction.multiplyScalar(distance));
+        
+        // Anima la camera verso la nuova posizione
+        const startPosition = this.camera.position.clone();
+        const startTarget = this.controls.target.clone();
+        
+        const duration = 1000; // 1 secondo
+        const startTime = Date.now();
+        
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Usa easing per un'animazione più fluida
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            // Interpola posizione camera
+            this.camera.position.lerpVectors(startPosition, newPosition, easeProgress);
+            
+            // Interpola target dei controlli
+            this.controls.target.lerpVectors(startTarget, center, easeProgress);
+            
+            this.controls.update();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        animate();
+        
+        // Evidenzia temporaneamente l'elemento
+        this.highlightElement(element);
+    }
+    
+    highlightElement(element) {
+        if (!element || !element.material) return;
+        
+        // Salva il colore originale
+        const originalColor = element.material.color ? element.material.color.clone() : null;
+        const originalEmissive = element.material.emissive ? element.material.emissive.clone() : null;
+        
+        // Applica evidenziazione
+        if (element.material.emissive) {
+            element.material.emissive.setHex(0x444444); // Colore emissivo per evidenziare
+        }
+        
+        // Rimuovi evidenziazione dopo 2 secondi
+        setTimeout(() => {
+            if (originalEmissive && element.material.emissive) {
+                element.material.emissive.copy(originalEmissive);
+            }
+        }, 2000);
     }
     
     // Rimossa funzione openS3ModelDialog

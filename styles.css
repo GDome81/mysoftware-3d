@@ -66,12 +66,15 @@ header {
     position: absolute;
     background-color: #f9f9f9;
     min-width: 160px;
+    max-width: 400px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     z-index: 2001; /* Sopra il modal S3 */
     border-radius: 5px;
     top: 100%; /* Posiziona sotto il pulsante */
     left: 0;
-    overflow: hidden;
 }
 
 /* Classe per mostrare il menu */
@@ -106,8 +109,9 @@ header {
 /* Stile per il menu gerarchico */
 .hierarchy-tree {
     padding: 10px;
-    max-height: 350px;
+    max-height: 450px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .no-hierarchy {
@@ -651,6 +655,7 @@ main {
         left: 10px;
         right: auto;
         max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 80px);
     }
     
     /* Posizionamento specifico per il menu elementi */
@@ -658,11 +663,13 @@ main {
         right: 10px;
         left: auto;
         max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
     }
     
     /* Migliora la visualizzazione del menu gerarchico su mobile */
     .hierarchy-tree {
-        max-height: 250px;
+        max-height: 350px;
         padding: 8px;
     }
     
