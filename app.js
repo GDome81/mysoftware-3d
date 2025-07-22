@@ -173,7 +173,7 @@ class ModelViewer {
         // Pulsante "Show Only"
         const showOnlyBtn = document.createElement('button');
         showOnlyBtn.className = 'layer-show-only';
-        showOnlyBtn.textContent = 'Solo';
+        showOnlyBtn.textContent = 'Show';
         showOnlyBtn.title = 'Mostra solo questo livello';
         showOnlyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
