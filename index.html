@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="3D Viewer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="3D Viewer">
+    <meta name="msapplication-TileColor" content="#2196F3">
+    <meta name="msapplication-config" content="browserconfig.xml">
     <meta name="description" content="Visualizzatore di modelli 3D che supporta formati FBX, OBJ, GLTF e GLB">
     <!-- Cache control meta tags -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -198,6 +203,40 @@
                             // Nascondi il pulsante di installazione se presente
                             const installButton = document.getElementById('install-button');
                             if (installButton) {
+                                installButton.remove();
+                            }
+                            // Mostra notifica di installazione riuscita
+                            const notification = document.createElement('div');
+                            notification.textContent = 'App installata con successo!';
+                            notification.style.cssText = `
+                                position: fixed;
+                                top: 20px;
+                                right: 20px;
+                                background-color: #4CAF50;
+                                color: white;
+                                padding: 10px 15px;
+                                border-radius: 4px;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                                z-index: 9999;
+                                animation: slideIn 0.3s ease-out;
+                            `;
+                            document.body.appendChild(notification);
+                            setTimeout(() => notification.remove(), 3000);
+                        });
+                        
+                        // Controlla se l'app è già installata
+                        if (window.matchMedia('(display-mode: standalone)').matches) {
+                            console.log('App già installata e in esecuzione in modalità standalone');
+                        }
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
                                 installButton.style.display = 'none';
                             }
                         });
