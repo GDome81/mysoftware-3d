@@ -3265,14 +3265,18 @@ class ModelViewer {
         dynamicModelsContainer.innerHTML = '';
         
         try {
-            // Lista dei file noti nella cartella compressor/output
-            const knownModels = [
-                'compressed v8 engine.glb',
-                'original v8 engine.glb',
-                'porsche 911 turbo.glb',
-                'western pacific.glb',
-                'yacht engine.glb'
-            ];
+            // Legge dinamicamente i file dalla cartella compressor/output
+            const response = await fetch('./compressor/output/');
+            const text = await response.text();
+            
+            // Estrae i nomi dei file .glb dalla risposta HTML del server
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            const links = doc.querySelectorAll('a[href$=".glb"]');
+            
+            const knownModels = Array.from(links).map(link => {
+                return decodeURIComponent(link.getAttribute('href'));
+            }).filter(filename => filename !== '../' && filename.endsWith('.glb'));
             
             // Crea pulsanti per ogni modello
             knownModels.forEach(filename => {
