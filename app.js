@@ -17,6 +17,10 @@ class ModelViewer {
         this.aggressiveOptimizationsEnabled = true; // Flag per controllare le ottimizzazioni aggressive
         this.isLoading = false; // Flag per prevenire caricamenti simultanei
         
+        // Proprietà per il sistema di doppio tap
+        this.lastSelectedObject = null;
+        this.lastTapTime = 0;
+        
         this.init();
         this.setupEventListeners();
     }
@@ -2831,6 +2835,67 @@ class ModelViewer {
         tooltip.style.top = `${this.mouse.clientY + 15}px`;
     }
     
+    // Mostra il nome dell'elemento selezionato
+    showSelectedElement(object) {
+        if (!object) return;
+        
+        const tooltip = document.getElementById('object-tooltip');
+        if (tooltip) {
+            // Imposta il testo del tooltip con il nome dell'oggetto
+            tooltip.textContent = `Tap di nuovo per selezionare: ${object.name}`;
+            tooltip.classList.remove('hidden');
+            
+            // Posiziona il tooltip vicino al punto di tocco
+            const rect = this.renderer.domElement.getBoundingClientRect();
+            const x = (this.mouse.x + 1) / 2 * rect.width + rect.left;
+            const y = (1 - (this.mouse.y + 1) / 2) * rect.height + rect.top;
+            
+            tooltip.style.left = `${x + 15}px`; // Offset per non coprire il punto di tocco
+            tooltip.style.top = `${y}px`;
+            
+            // Evidenzia l'oggetto
+            if (object.material) {
+                // Salva il colore originale se non è già stato salvato
+                if (!object.userData.originalColor) {
+                    if (Array.isArray(object.material)) {
+                        object.userData.originalColor = object.material.map(m => m.color.clone());
+                    } else {
+                        object.userData.originalColor = object.material.color.clone();
+                    }
+                }
+                
+                // Cambia il colore per evidenziare
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(m => {
+                        m.emissive = new THREE.Color(0x333333);
+                    });
+                } else {
+                    object.material.emissive = new THREE.Color(0x333333);
+                }
+            }
+        }
+    }
+    
+    // Nascondi il tooltip dell'elemento selezionato
+    hideSelectedElement() {
+        const tooltip = document.getElementById('object-tooltip');
+        if (tooltip) {
+            tooltip.classList.add('hidden');
+        }
+        
+        // Ripristina l'aspetto originale dell'oggetto precedentemente selezionato
+        if (this.lastSelectedObject && this.lastSelectedObject.material) {
+            // Ripristina il colore originale
+            if (Array.isArray(this.lastSelectedObject.material)) {
+                this.lastSelectedObject.material.forEach(m => {
+                    m.emissive = new THREE.Color(0x000000);
+                });
+            } else {
+                this.lastSelectedObject.material.emissive = new THREE.Color(0x000000);
+            }
+        }
+    }
+    
     // Gestione del click del mouse
     onMouseClick(event) {
         // Previeni il click se stiamo usando i controlli OrbitControls
@@ -2877,10 +2942,13 @@ class ModelViewer {
         }
     }
     
-    // Gestione del touch
+    // Gestione del touch con sistema a doppio tap
     onTouchStart(event) {
         // Previeni il touch se ci sono più di un tocco (probabilmente è un gesto di zoom/pan)
         if (event.touches.length > 1) return;
+        
+        // Previeni il click se stiamo usando i controlli OrbitControls
+        if (this.controls.enabled && this.controls.isDragging) return;
         
         // Converti il touch in coordinate del mouse
         const touch = event.touches[0];
@@ -2890,7 +2958,60 @@ class ModelViewer {
         };
         
         this.updateMousePosition(mouseEvent);
-        this.onMouseClick(mouseEvent);
+        
+        // Usa il raycaster per trovare intersezioni
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.clickableObjects, true);
+        
+        if (intersects.length > 0) {
+            // Trova il primo oggetto cliccabile nell'array di intersezioni
+            let clickableObject = null;
+            for (const intersect of intersects) {
+                // Controlla se l'oggetto o uno dei suoi genitori è cliccabile
+                let obj = intersect.object;
+                while (obj) {
+                    if (obj.userData && obj.userData.isClickable) {
+                        clickableObject = obj;
+                        break;
+                    }
+                    obj = obj.parent;
+                }
+                if (clickableObject) break;
+            }
+            
+            if (clickableObject) {
+                // Ottieni il timestamp corrente
+                const now = Date.now();
+                
+                // Verifica se è un doppio tap sullo stesso oggetto
+                if (this.lastSelectedObject === clickableObject && 
+                    now - this.lastTapTime < 500) { // 500ms per il doppio tap
+                    
+                    // Esegui la funzione di callback associata all'oggetto
+                    if (clickableObject.userData.onClick) {
+                        clickableObject.userData.onClick(clickableObject);
+                    }
+                    
+                    // Resetta lo stato dopo l'azione
+                    this.lastSelectedObject = null;
+                    this.lastTapTime = 0;
+                    
+                    // Nascondi il tooltip dopo l'azione
+                    this.hideSelectedElement();
+                } else {
+                    // Primo tap: mostra il nome dell'elemento selezionato
+                    this.showSelectedElement(clickableObject);
+                    
+                    // Memorizza l'oggetto e il timestamp per il prossimo tap
+                    this.lastSelectedObject = clickableObject;
+                    this.lastTapTime = now;
+                }
+            }
+        } else {
+            // Nessun oggetto selezionato, nascondi il tooltip
+            this.hideSelectedElement();
+            this.lastSelectedObject = null;
+        }
     }
     
     // Aggiorna la posizione del mouse normalizzata
