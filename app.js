@@ -44,7 +44,7 @@ class ModelViewer {
             }
         });
         
-        this.updateLayersUI();
+        this.updateHierarchyUI();
     }
     
     extractLayerName(objectName) {
@@ -72,51 +72,151 @@ class ModelViewer {
         });
     }
     
-    updateLayersUI() {
-        const layersList = document.getElementById('layersList');
-        const noLayersMsg = layersList.querySelector('.no-layers');
+    updateHierarchyUI() {
+        const hierarchyTree = document.getElementById('hierarchyTree');
+        const noHierarchyMsg = hierarchyTree.querySelector('.no-hierarchy');
         
-        // Rimuovi il messaggio "nessun layer"
-        if (noLayersMsg) {
-            noLayersMsg.remove();
+        // Rimuovi il messaggio "nessun modello"
+        if (noHierarchyMsg) {
+            noHierarchyMsg.remove();
         }
         
         // Pulisci la lista esistente
-        layersList.innerHTML = '';
+        hierarchyTree.innerHTML = '';
         
         // Se non ci sono layer, mostra il messaggio
         if (Object.keys(this.modelLayers).length === 0) {
-            layersList.innerHTML = '<p class="no-layers">Nessun layer disponibile</p>';
+            hierarchyTree.innerHTML = '<p class="no-hierarchy">Nessun modello caricato</p>';
             return;
         }
         
-        // Aggiungi ogni layer alla lista
+        // Aggiungi ogni layer alla gerarchia
         Object.keys(this.modelLayers).forEach(layerName => {
-            const layerItem = document.createElement('div');
-            layerItem.className = 'layer-item';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'layer-checkbox';
-            checkbox.checked = true;
-            checkbox.addEventListener('change', (e) => {
-                this.toggleLayerVisibility(layerName, e.target.checked);
-            });
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'layer-name';
-            nameSpan.textContent = `${layerName} (${this.modelLayers[layerName].length})`;
-            
-            const colorDiv = document.createElement('div');
-            colorDiv.className = 'layer-color';
-            colorDiv.style.backgroundColor = this.layerColors[layerName];
-            
-            layerItem.appendChild(checkbox);
-            layerItem.appendChild(nameSpan);
-            layerItem.appendChild(colorDiv);
-            
-            layersList.appendChild(layerItem);
+            const layerNode = this.createLayerNode(layerName);
+            hierarchyTree.appendChild(layerNode);
         });
+    }
+    
+    createLayerNode(layerName) {
+        const layerObjects = this.modelLayers[layerName];
+        const clickableElements = layerObjects.filter(obj => this.clickableObjects.includes(obj));
+        
+        // Contenitore principale del layer
+        const layerNode = document.createElement('div');
+        layerNode.className = 'layer-node';
+        
+        // Header del layer
+        const layerHeader = document.createElement('div');
+        layerHeader.className = 'layer-header';
+        
+        // Icona di espansione
+        const layerToggle = document.createElement('div');
+        layerToggle.className = 'layer-toggle';
+        layerToggle.textContent = '▶';
+        
+        // Checkbox per visibilità layer
+        const layerCheckbox = document.createElement('input');
+        layerCheckbox.type = 'checkbox';
+        layerCheckbox.className = 'layer-checkbox';
+        layerCheckbox.checked = true;
+        layerCheckbox.addEventListener('change', (e) => {
+            this.toggleLayerVisibility(layerName, e.target.checked);
+        });
+        
+        // Informazioni del layer
+        const layerInfo = document.createElement('div');
+        layerInfo.className = 'layer-info';
+        
+        const layerNameSpan = document.createElement('span');
+        layerNameSpan.className = 'layer-name';
+        layerNameSpan.textContent = layerName;
+        
+        const layerCount = document.createElement('span');
+        layerCount.className = 'layer-count';
+        layerCount.textContent = `${clickableElements.length}/${layerObjects.length}`;
+        
+        const layerColor = document.createElement('div');
+        layerColor.className = 'layer-color';
+        layerColor.style.backgroundColor = this.layerColors[layerName];
+        
+        layerInfo.appendChild(layerNameSpan);
+        layerInfo.appendChild(layerCount);
+        layerInfo.appendChild(layerColor);
+        
+        layerHeader.appendChild(layerToggle);
+        layerHeader.appendChild(layerCheckbox);
+        layerHeader.appendChild(layerInfo);
+        
+        // Contenitore degli elementi
+        const layerElements = document.createElement('div');
+        layerElements.className = 'layer-elements';
+        
+        // Aggiungi elementi cliccabili
+        clickableElements.forEach(element => {
+            const elementItem = this.createElementItem(element);
+            layerElements.appendChild(elementItem);
+        });
+        
+        // Gestione espansione/contrazione
+        layerHeader.addEventListener('click', (e) => {
+            if (e.target === layerCheckbox) return; // Non espandere se si clicca sulla checkbox
+            
+            const isExpanded = layerElements.classList.contains('expanded');
+            layerElements.classList.toggle('expanded');
+            layerHeader.classList.toggle('expanded');
+            layerToggle.classList.toggle('expanded');
+        });
+        
+        layerNode.appendChild(layerHeader);
+        layerNode.appendChild(layerElements);
+        
+        return layerNode;
+    }
+    
+    createElementItem(element) {
+        const elementItem = document.createElement('div');
+        elementItem.className = 'element-item';
+        
+        const elementName = document.createElement('span');
+        elementName.className = 'element-name';
+        elementName.textContent = element.name || 'Elemento senza nome';
+        
+        const elementActions = document.createElement('div');
+        elementActions.className = 'element-actions';
+        
+        // Pulsante Focus
+        const focusBtn = document.createElement('button');
+        focusBtn.className = 'element-btn focus';
+        focusBtn.textContent = '👁';
+        focusBtn.title = 'Focalizza elemento';
+        focusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.focusOnObject(element);
+        });
+        
+        // Pulsante Evidenzia
+        const highlightBtn = document.createElement('button');
+        highlightBtn.className = 'element-btn highlight';
+        highlightBtn.textContent = '💡';
+        highlightBtn.title = 'Evidenzia elemento';
+        highlightBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.highlightObject(element);
+        });
+        
+        elementActions.appendChild(focusBtn);
+        elementActions.appendChild(highlightBtn);
+        
+        elementItem.appendChild(elementName);
+        elementItem.appendChild(elementActions);
+        
+        // Click sull'elemento per selezionarlo
+        elementItem.addEventListener('click', (e) => {
+            if (e.target.classList.contains('element-btn')) return;
+            this.selectObject(element);
+        });
+        
+        return elementItem;
     }
     
     init() {
@@ -333,6 +433,58 @@ class ModelViewer {
                 };
             }
             
+            // Gestori per i modelli dalla cartella compressor/output
+            const compressedV8Btn = document.getElementById('compressedV8Btn');
+            const originalV8Btn = document.getElementById('originalV8Btn');
+            const porscheBtn = document.getElementById('porscheBtn');
+            const westernPacificBtn = document.getElementById('westernPacificBtn');
+            const yachtEngineBtn = document.getElementById('yachtEngineBtn');
+            
+            if (compressedV8Btn) {
+                compressedV8Btn.onclick = (e) => {
+                    console.log('Click su V8 Engine (Compressed)');
+                    e.stopPropagation();
+                    this.loadCompressorModel('compressed v8 engine.glb');
+                    closeAllMenus();
+                };
+            }
+            
+            if (originalV8Btn) {
+                originalV8Btn.onclick = (e) => {
+                    console.log('Click su V8 Engine (Original)');
+                    e.stopPropagation();
+                    this.loadCompressorModel('original v8 engine.glb');
+                    closeAllMenus();
+                };
+            }
+            
+            if (porscheBtn) {
+                porscheBtn.onclick = (e) => {
+                    console.log('Click su Porsche 911 Turbo');
+                    e.stopPropagation();
+                    this.loadCompressorModel('porsche 911 turbo.glb');
+                    closeAllMenus();
+                };
+            }
+            
+            if (westernPacificBtn) {
+                westernPacificBtn.onclick = (e) => {
+                    console.log('Click su Western Pacific');
+                    e.stopPropagation();
+                    this.loadCompressorModel('western pacific.glb');
+                    closeAllMenus();
+                };
+            }
+            
+            if (yachtEngineBtn) {
+                yachtEngineBtn.onclick = (e) => {
+                    console.log('Click su Yacht Engine');
+                    e.stopPropagation();
+                    this.loadCompressorModel('yacht engine.glb');
+                    closeAllMenus();
+                };
+            }
+            
             // Rimosso gestore eventi per il pulsante S3
         } else {
             console.error('Elementi menu Carica Modello non trovati');
@@ -421,37 +573,37 @@ class ModelViewer {
             console.error('Elementi menu Impostazioni non trovati');
         }
         
-        // Gestione menu "Layer"
-        const layersBtn = document.getElementById('layersButton');
-        const layersItems = document.getElementById('layersItems');
+        // Gestione menu "Gerarchia"
+        const hierarchyBtn = document.getElementById('hierarchyButton');
+        const hierarchyItems = document.getElementById('hierarchyItems');
         
-        if (layersBtn && layersItems) {
-            console.log('Configurazione menu Layer');
+        if (hierarchyBtn && hierarchyItems) {
+            console.log('Configurazione menu Gerarchia');
             
             // Gestione click sul pulsante principale
-            layersBtn.onclick = function(e) {
-                console.log('CLICK su Layer');
+            hierarchyBtn.onclick = function(e) {
+                console.log('CLICK su Gerarchia');
                 e.stopPropagation();
                 
                 // Chiudi tutti gli altri menu
                 document.querySelectorAll('.menu-items').forEach(menu => {
-                    if (menu !== layersItems) {
+                    if (menu !== hierarchyItems) {
                         menu.classList.remove('show');
                     }
                 });
                 
                 // Apri/chiudi questo menu
-                layersItems.classList.toggle('show');
-                console.log('Menu Layer cliccato, Stato:', layersItems.classList.contains('show'));
+                hierarchyItems.classList.toggle('show');
+                console.log('Menu Gerarchia cliccato, Stato:', hierarchyItems.classList.contains('show'));
             };
             
             // Previeni la chiusura quando si clicca all'interno del menu
-            layersItems.onclick = function(e) {
-                console.log('Click dentro layersItems');
+            hierarchyItems.onclick = function(e) {
+                console.log('Click dentro hierarchyItems');
                 e.stopPropagation();
             };
         } else {
-            console.error('Elementi menu Layer non trovati');
+            console.error('Elementi menu Gerarchia non trovati');
         }
         
         // Chiudi i menu quando si clicca altrove
@@ -1710,8 +1862,17 @@ class ModelViewer {
                     
                     // Semplifica la geometria
                     if (child.geometry) {
+                        // Verifica se il materiale ha normal maps che richiedono tangent/bitangent
+                        let hasNormalMap = false;
+                        if (child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            hasNormalMap = materials.some(mat => mat.normalMap);
+                        }
+                        
                         // Rimuovi attributi non essenziali per risparmiare memoria
-                        ['color', 'uv2', 'tangent', 'bitangent'].forEach(attr => {
+                        // Ma preserva tangent/bitangent se ci sono normal maps
+                        const attributesToRemove = hasNormalMap ? ['color', 'uv2'] : ['color', 'uv2', 'tangent', 'bitangent'];
+                        attributesToRemove.forEach(attr => {
                             if (child.geometry.attributes[attr]) {
                                 child.geometry.deleteAttribute(attr);
                             }
@@ -1831,8 +1992,17 @@ class ModelViewer {
                     
                     // Ottimizza geometria per modelli con molti vertici
                     if (child.geometry && child.geometry.attributes.position.count > 10000) {
+                        // Verifica se il materiale ha normal maps che richiedono tangent
+                        let hasNormalMap = false;
+                        if (child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            hasNormalMap = materials.some(mat => mat.normalMap);
+                        }
+                        
                         // Rimuovi attributi non essenziali per risparmiare memoria
-                        ['color', 'tangent'].forEach(attr => {
+                        // Ma preserva tangent se ci sono normal maps
+                        const attributesToRemove = hasNormalMap ? ['color'] : ['color', 'tangent'];
+                        attributesToRemove.forEach(attr => {
                             if (child.geometry.attributes[attr]) {
                                 child.geometry.deleteAttribute(attr);
                             }
@@ -1966,30 +2136,67 @@ class ModelViewer {
         texture.needsUpdate = true;
     }
     
-    // Riduce la risoluzione di una texture
+    // Riduce la risoluzione di una texture (versione sicura)
     reduceTextureResolution(texture, scale) {
         if (!texture || !texture.image) return;
         
-        // Crea un canvas temporaneo per ridimensionare l'immagine
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Calcola le nuove dimensioni
-        const newWidth = Math.max(32, Math.floor(texture.image.width * scale));
-        const newHeight = Math.max(32, Math.floor(texture.image.height * scale));
-        
-        // Imposta le dimensioni del canvas
-        canvas.width = newWidth;
-        canvas.height = newHeight;
-        
-        // Disegna l'immagine ridimensionata sul canvas
-        ctx.drawImage(texture.image, 0, 0, newWidth, newHeight);
-        
-        // Aggiorna la texture con l'immagine ridimensionata
-        texture.image = canvas;
-        texture.needsUpdate = true;
-        
-        console.log(`Texture ridimensionata da ${texture.image.width}x${texture.image.height} a ${newWidth}x${newHeight}`);
+        try {
+            // Verifica che l'immagine sia valida e caricata
+            if (!texture.image.complete || texture.image.naturalWidth === 0) {
+                console.warn('Texture non completamente caricata, saltando ridimensionamento');
+                return;
+            }
+            
+            // Crea un canvas temporaneo per ridimensionare l'immagine
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+                console.warn('Impossibile ottenere contesto 2D del canvas');
+                return;
+            }
+            
+            // Calcola le nuove dimensioni
+            const originalWidth = texture.image.width || texture.image.naturalWidth;
+            const originalHeight = texture.image.height || texture.image.naturalHeight;
+            
+            const newWidth = Math.max(32, Math.floor(originalWidth * scale));
+            const newHeight = Math.max(32, Math.floor(originalHeight * scale));
+            
+            // Imposta le dimensioni del canvas
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            // Configura il contesto per una migliore qualità
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Disegna l'immagine ridimensionata sul canvas
+            ctx.drawImage(texture.image, 0, 0, newWidth, newHeight);
+            
+            // Crea una nuova texture invece di modificare quella esistente
+            const newTexture = new THREE.CanvasTexture(canvas);
+            
+            // Copia le proprietà importanti dalla texture originale
+            newTexture.wrapS = texture.wrapS;
+            newTexture.wrapT = texture.wrapT;
+            newTexture.minFilter = texture.minFilter;
+            newTexture.magFilter = texture.magFilter;
+            newTexture.format = texture.format;
+            newTexture.type = texture.type;
+            newTexture.anisotropy = texture.anisotropy;
+            newTexture.generateMipmaps = texture.generateMipmaps;
+            
+            // Sostituisci l'immagine della texture originale
+            texture.image = canvas;
+            texture.needsUpdate = true;
+            
+            console.log(`Texture ridimensionata da ${originalWidth}x${originalHeight} a ${newWidth}x${newHeight}`);
+            
+        } catch (error) {
+            console.warn('Errore durante il ridimensionamento della texture:', error);
+            // In caso di errore, non modificare la texture
+        }
     }
     
     // Ottimizzazioni di emergenza per situazioni critiche (>90% memoria)
@@ -2235,6 +2442,9 @@ class ModelViewer {
         
         // Aggiungi l'oggetto alla lista degli oggetti cliccabili
         this.clickableObjects.push(object);
+        
+        // Aggiorna la lista degli elementi cliccabili nel menu
+        this.updateHierarchyUI();
         
         console.log(`Oggetto reso cliccabile: ${object.name || 'Senza nome'}`);
         return object;
@@ -2665,7 +2875,177 @@ class ModelViewer {
             console.warn('Nessun elemento è stato reso cliccabile. Verifica che il modello contenga mesh valide.');
         }
         
+        // Aggiorna la gerarchia nel menu
+        this.updateHierarchyUI();
+        
         return clickableCount;
+    }
+    
+    // Aggiorna la lista degli elementi cliccabili nel menu
+    updateClickableElementsList() {
+        const clickableList = document.getElementById('clickableList');
+        const noClickableElements = clickableList ? clickableList.querySelector('.no-clickables') : null;
+        
+        if (!clickableList) {
+            return;
+        }
+        
+        // Pulisci la lista esistente (ma mantieni il messaggio "no-clickables")
+        const noClickablesElement = clickableList.querySelector('.no-clickables');
+        clickableList.innerHTML = '';
+        if (noClickablesElement) {
+            clickableList.appendChild(noClickablesElement);
+        }
+        
+        if (this.clickableObjects.length === 0) {
+            if (noClickableElements) {
+                noClickableElements.style.display = 'block';
+            }
+        } else {
+            if (noClickableElements) {
+                noClickableElements.style.display = 'none';
+            }
+            
+            // Aggiungi ogni elemento cliccabile alla lista
+            this.clickableObjects.forEach((obj, index) => {
+                const item = document.createElement('div');
+                item.className = 'clickable-item';
+                
+                // Nome dell'elemento (usa il nome dell'oggetto o un nome generico)
+                const name = obj.name || `Elemento ${index + 1}`;
+                
+                item.innerHTML = `
+                    <span class="clickable-name">${name}</span>
+                    <div class="clickable-actions">
+                        <button class="clickable-focus-btn" title="Centra vista sull'elemento">🎯</button>
+                        <button class="clickable-highlight-btn" title="Evidenzia elemento">💡</button>
+                        <button class="clickable-remove-btn" title="Rimuovi dalla lista cliccabili">❌</button>
+                    </div>
+                `;
+                
+                // Aggiungi event listeners per i pulsanti
+                const focusBtn = item.querySelector('.clickable-focus-btn');
+                const highlightBtn = item.querySelector('.clickable-highlight-btn');
+                const removeBtn = item.querySelector('.clickable-remove-btn');
+                
+                focusBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.focusOnObject(obj);
+                };
+                
+                highlightBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.highlightObject(obj);
+                };
+                
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.removeClickable(obj);
+                    this.updateHierarchyUI();
+                };
+                
+                // Aggiungi click sull'elemento per simulare il click sull'oggetto 3D
+                item.onclick = (e) => {
+                    if (!e.target.closest('button')) {
+                        // Simula il click sull'oggetto
+                        if (obj.userData && obj.userData.onClick) {
+                            obj.userData.onClick(obj);
+                        }
+                    }
+                };
+                
+                clickableList.appendChild(item);
+            });
+        }
+    }
+    
+    // Centra la vista su un oggetto specifico
+    focusOnObject(object) {
+        if (!object) return;
+        
+        // Calcola il bounding box dell'oggetto
+        const box = new THREE.Box3().setFromObject(object);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        // Calcola la distanza appropriata per inquadrare l'oggetto
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const distance = maxDim * 2;
+        
+        // Posiziona la camera
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        
+        const newPosition = center.clone().sub(direction.multiplyScalar(distance));
+        
+        // Anima la transizione della camera
+        this.animateCameraTo(newPosition, center);
+    }
+    
+    // Evidenzia temporaneamente un oggetto
+    highlightObject(object) {
+        if (!object || !object.material) return;
+        
+        // Salva il materiale originale
+        const originalMaterial = object.material;
+        
+        // Crea un materiale evidenziato
+        const highlightMaterial = originalMaterial.clone();
+        if (highlightMaterial.emissive) {
+            highlightMaterial.emissive.setHex(0x444444);
+        }
+        
+        // Applica il materiale evidenziato
+        object.material = highlightMaterial;
+        
+        // Ripristina il materiale originale dopo 2 secondi
+        setTimeout(() => {
+            object.material = originalMaterial;
+        }, 2000);
+    }
+    
+    // Seleziona un oggetto (simula il click)
+    selectObject(object) {
+        if (!object) return;
+        
+        // Simula il click sull'oggetto se ha un handler
+        if (object.userData && object.userData.onClick) {
+            object.userData.onClick(object);
+        } else {
+            // Comportamento di default: focalizza l'oggetto
+            this.focusOnObject(object);
+        }
+        
+        console.log(`Oggetto selezionato: ${object.name || 'Senza nome'}`);
+    }
+    
+    // Anima la camera verso una posizione e target specifici
+    animateCameraTo(position, target) {
+        const startPosition = this.camera.position.clone();
+        const startTarget = this.controls.target.clone();
+        
+        const duration = 1000; // 1 secondo
+        const startTime = Date.now();
+        
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function (ease-out)
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            // Interpola posizione e target
+            this.camera.position.lerpVectors(startPosition, position, easeProgress);
+            this.controls.target.lerpVectors(startTarget, target, easeProgress);
+            
+            this.controls.update();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        animate();
     }
     
     animate() {

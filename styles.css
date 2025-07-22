@@ -96,45 +96,187 @@ header {
     background-color: #ddd;
 }
 
-/* Stile per la lista dei layer */
-.layers-list {
+.menu-separator {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 8px 16px;
+    opacity: 0.5;
+}
+
+/* Stile per il menu gerarchico */
+.hierarchy-tree {
     padding: 10px;
-    max-height: 300px;
+    max-height: 350px;
     overflow-y: auto;
 }
 
-.no-layers {
+.no-hierarchy {
     color: #999;
     font-style: italic;
     text-align: center;
     padding: 10px 0;
 }
 
-.layer-item {
+.layer-node {
+    margin-bottom: 8px;
+}
+
+.layer-header {
     display: flex;
     align-items: center;
     padding: 8px 5px;
-    border-bottom: 1px solid #eee;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-left: 4px solid transparent;
 }
 
-.layer-item:last-child {
-    border-bottom: none;
+.layer-header:hover {
+    background-color: #e9ecef;
+}
+
+.layer-header.expanded {
+    border-left-color: #2196F3;
+}
+
+.layer-toggle {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #666;
+    transition: transform 0.2s;
+}
+
+.layer-toggle.expanded {
+    transform: rotate(90deg);
 }
 
 .layer-checkbox {
     margin-right: 10px;
 }
 
-.layer-name {
+.layer-info {
     flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.layer-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.layer-count {
+    font-size: 0.8rem;
+    color: #666;
+    background-color: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 10px;
 }
 
 .layer-color {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    margin-left: 10px;
     border: 1px solid #ddd;
+    flex-shrink: 0;
+}
+
+.layer-elements {
+    margin-left: 24px;
+    margin-top: 4px;
+    display: none;
+    border-left: 2px solid #e9ecef;
+    padding-left: 8px;
+}
+
+.layer-elements.expanded {
+    display: block;
+}
+
+.element-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 2px;
+    background-color: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #e9ecef;
+}
+
+.element-item:hover {
+    background-color: #f8f9fa;
+    border-color: #2196F3;
+    transform: translateX(2px);
+}
+
+.element-name {
+    flex-grow: 1;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.element-actions {
+    display: flex;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.element-item:hover .element-actions {
+    opacity: 1;
+}
+
+.element-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 3px 6px;
+    border-radius: 2px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.element-btn:hover {
+    background: #1976D2;
+}
+
+.element-btn.focus {
+    background: #FF9800;
+}
+
+.element-btn.focus:hover {
+    background: #F57C00;
+}
+
+.element-btn.highlight {
+    background: #4CAF50;
+}
+
+.element-btn.highlight:hover {
+    background: #388E3C;
+}
+
+.element-btn.remove {
+    background: #f44336;
+}
+
+.element-btn.remove:hover {
+    background: #d32f2f;
 }
 
 /* Rimosso il comportamento hover per i dropdown, ora gestito da JavaScript */
@@ -484,6 +626,79 @@ main {
     .menu-container {
         width: 100%;
         justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    /* Stili per i nuovi menu su mobile */
+    .menu-btn {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+    
+    .menu-items {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        min-width: auto;
+        max-width: calc(100vw - 20px);
+        top: auto;
+        transform: none;
+    }
+    
+    /* Posizionamento specifico per il menu livelli */
+    .menu-group:first-child .menu-items {
+        left: 10px;
+        right: auto;
+        max-width: calc(100vw - 20px);
+    }
+    
+    /* Posizionamento specifico per il menu elementi */
+    .menu-group:last-child .menu-items {
+        right: 10px;
+        left: auto;
+        max-width: calc(100vw - 20px);
+    }
+    
+    /* Migliora la visualizzazione del menu gerarchico su mobile */
+    .hierarchy-tree {
+        max-height: 250px;
+        padding: 8px;
+    }
+    
+    .layer-header {
+        padding: 10px 8px;
+        font-size: 0.9rem;
+    }
+    
+    .layer-name {
+        font-size: 0.85rem;
+    }
+    
+    .layer-count {
+        font-size: 0.7rem;
+        padding: 1px 4px;
+    }
+    
+    .element-item {
+        padding: 8px 6px;
+        margin-bottom: 3px;
+    }
+    
+    .element-name {
+        font-size: 0.8rem;
+    }
+    
+    .element-btn {
+        padding: 4px 6px;
+        font-size: 0.65rem;
+        min-width: 28px;
+        height: 28px;
+    }
+    
+    .layer-elements {
+        margin-left: 16px;
+        padding-left: 6px;
     }
     
     .dropbtn {

@@ -35,7 +35,12 @@
                             <button id="uploadModelBtn" class="menu-item">Carica File</button>
                             <button id="testModelBtn" class="menu-item">Modello Test</button>
                             <button id="engineModelBtn" class="menu-item">Motore V8</button>
-                            <!-- Rimosso caricamento da S3 -->
+                            <hr class="menu-separator">
+                            <button id="compressedV8Btn" class="menu-item">V8 Engine (Compressed)</button>
+                            <button id="originalV8Btn" class="menu-item">V8 Engine (Original)</button>
+                            <button id="porscheBtn" class="menu-item">Porsche 911 Turbo</button>
+                            <button id="westernPacificBtn" class="menu-item">Western Pacific</button>
+                            <button id="yachtEngineBtn" class="menu-item">Yacht Engine</button>
                         </div>
                     </div>
                     <div class="menu-group">
@@ -48,11 +53,11 @@
                         </div>
                     </div>
                     <div class="menu-group">
-                        <button id="layersButton" class="menu-btn">Layer</button>
-                        <div class="menu-items" id="layersItems">
-                            <div id="layersList" class="layers-list">
-                                <p class="no-layers">Nessun layer disponibile</p>
-                                <!-- I layer verranno aggiunti dinamicamente qui -->
+                        <button id="hierarchyButton" class="menu-btn">Gerarchia</button>
+                        <div class="menu-items" id="hierarchyItems">
+                            <div id="hierarchyTree" class="hierarchy-tree">
+                                <p class="no-hierarchy">Nessun modello caricato</p>
+                                <!-- La gerarchia verrà aggiunta dinamicamente qui -->
                             </div>
                         </div>
                     </div>
