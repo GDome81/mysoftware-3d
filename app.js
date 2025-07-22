@@ -6,7 +6,7 @@ class ModelViewer {
         this.controls = null;
         this.currentModel = null;
         this.isWireframe = false;
-        this.isDarkBackground = true; // Default è sfondo scuro
+        this.isDarkBackground = false; // Default è sfondo chiaro
         this.lastMemoryCheck = 0;
         this.raycaster = null;
         this.mouse = null;
@@ -271,9 +271,16 @@ class ModelViewer {
         this.lowQualityRendering = false;
         this.currentModel = null;
         
+        // Carica la preferenza del tema dal localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            this.isDarkBackground = savedTheme === 'dark';
+        }
+        
         // Setup scene
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x222222);
+        // Imposta il background in base alla preferenza
+        this.scene.background = new THREE.Color(this.isDarkBackground ? 0x222222 : 0xf0f0f0);
         
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(
@@ -525,6 +532,9 @@ class ModelViewer {
             }
             
             if (backgroundBtn) {
+                // Inizializza il testo del pulsante in base al tema corrente
+                backgroundBtn.textContent = this.isDarkBackground ? 'Sfondo Chiaro' : 'Sfondo Scuro';
+                
                 backgroundBtn.onclick = (e) => {
                     console.log('Click su Cambio Sfondo');
                     e.stopPropagation();
@@ -1796,7 +1806,7 @@ class ModelViewer {
     toggleBackground() {
         // Inizializza la proprietà se non esiste
         if (this.isDarkBackground === undefined) {
-            this.isDarkBackground = true; // Default è scuro
+            this.isDarkBackground = false; // Default è chiaro
         }
         
         this.isDarkBackground = !this.isDarkBackground;
@@ -1813,6 +1823,9 @@ class ModelViewer {
         if (button) {
             button.textContent = this.isDarkBackground ? 'Sfondo Chiaro' : 'Sfondo Scuro';
         }
+        
+        // Salva la preferenza nel localStorage
+        localStorage.setItem('theme', this.isDarkBackground ? 'dark' : 'light');
     }
     
     onWindowResize() {
