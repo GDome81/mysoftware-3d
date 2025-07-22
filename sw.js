@@ -1,7 +1,8 @@
-const CACHE_NAME = 'model-viewer-v4';
-const STATIC_CACHE = 'static-cache-v4';
-const DYNAMIC_CACHE = 'dynamic-cache-v4';
-const MODEL_CACHE = 'model-cache-v4';
+const CACHE_VERSION = '1.0.1';
+const CACHE_NAME = `model-viewer-v${CACHE_VERSION}`;
+const STATIC_CACHE = `static-cache-v${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `dynamic-cache-v${CACHE_VERSION}`;
+const MODEL_CACHE = `model-cache-v${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
   './',
@@ -11,6 +12,7 @@ const STATIC_ASSETS = [
   './styles.css',
   './app.js',
   './mobile.js',
+  './cache-buster.js',
   './manifest.json',
   './icon-192x192.png',
   './icon-512x512.png',
@@ -93,6 +95,17 @@ self.addEventListener('message', (event) => {
     console.log('Service Worker: Skipping waiting phase');
     self.skipWaiting();
   }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    console.log('Service Worker: Clearing all caches');
+    event.waitUntil(
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+      })
+    );
+  }
 });
 
 // Fetch event - serve from cache or network with improved strategy
@@ -102,6 +115,12 @@ self.addEventListener('fetch', (event) => {
   
   // Handle different types of requests differently
   const url = new URL(event.request.url);
+  
+  // Strategy for versioned files (always fetch fresh if version parameter exists)
+  if (url.searchParams.has('v') || url.searchParams.has('t')) {
+    event.respondWith(networkFirstStrategy(event.request, STATIC_CACHE));
+    return;
+  }
   
   // Strategy for static assets (cache first, then network)
   if (STATIC_ASSETS.includes(url.pathname) || 

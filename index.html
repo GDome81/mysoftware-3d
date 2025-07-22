@@ -6,9 +6,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Visualizzatore di modelli 3D che supporta formati FBX, OBJ, GLTF e GLB">
+    <!-- Cache control meta tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Enginius 3D Model Viewer</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=1.0.0">
     <meta name="theme-color" content="#2196F3">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
@@ -136,8 +140,9 @@
             };
         }
     </script>
-    <script src="app.js"></script>
-    <script src="mobile.js"></script>
+    <script src="cache-buster.js"></script>
+    <script src="app.js?v=1.0.0"></script>
+    <script src="mobile.js?v=1.0.0"></script>
     
     <script>
         // Service Worker registration
