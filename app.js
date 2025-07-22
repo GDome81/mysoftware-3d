@@ -6,6 +6,7 @@ class ModelViewer {
         this.controls = null;
         this.currentModel = null;
         this.isWireframe = false;
+        this.isDarkBackground = true; // Default è sfondo scuro
         this.lastMemoryCheck = 0;
         this.raycaster = null;
         this.mouse = null;
@@ -504,6 +505,7 @@ class ModelViewer {
             const resetViewBtn = document.getElementById('resetViewBtn');
             const wireframeBtn = document.getElementById('wireframeBtn');
             const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const backgroundBtn = document.getElementById('backgroundBtn');
             const optimizationsBtn = document.getElementById('optimizationsBtn');
             
             if (resetViewBtn) {
@@ -529,6 +531,15 @@ class ModelViewer {
                     console.log('Click su Schermo Intero');
                     e.stopPropagation();
                     toggleFullscreen();
+                    closeAllMenus();
+                };
+            }
+            
+            if (backgroundBtn) {
+                backgroundBtn.onclick = (e) => {
+                    console.log('Click su Cambio Sfondo');
+                    e.stopPropagation();
+                    this.toggleBackground();
                     closeAllMenus();
                 };
             }
@@ -1554,9 +1565,28 @@ class ModelViewer {
             );
         } catch (e) {
             console.error('Errore durante l\'inizializzazione di GLTFLoader:', e);
-            alert('Errore durante l\'inizializzazione di GLTFLoader: ' + e.message);
-            loading.classList.add('hidden');
-            instructions.style.display = 'block';
+            clearTimeout(loadingTimeout);
+            clearInterval(progressInterval);
+            
+            // Mostra un messaggio di errore dettagliato
+            loadingText.innerHTML = `
+                Errore di inizializzazione per ${modelName}<br>
+                <small style="color: #f44336;">${e.message}</small><br>
+                <small style="color: #2196F3;">Verificare il supporto WebGL del browser</small>
+            `;
+            if (progressBar.parentNode) {
+                progressFill.style.background = '#f44336';
+            }
+            
+            // Nasconde il loader dopo 5 secondi
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                instructions.style.display = 'block';
+                if (progressBar.parentNode) {
+                    progressBar.parentNode.removeChild(progressBar);
+                }
+                loadingText.innerHTML = 'Caricamento modello...';
+            }, 5000);
         }
     }
     
@@ -1609,17 +1639,19 @@ class ModelViewer {
             fileSizeMB: 10 // Dimensione stimata del file
         };
         
-        // Add timeout for loading
+        // Add timeout for loading (increased to 5 minutes for slow networks)
         const loadingTimeout = setTimeout(() => {
-            console.warn('Timeout caricamento - il file potrebbe essere troppo complesso');
-            loading.classList.add('hidden');
-            instructions.style.display = 'block';
-            if (progressBar.parentNode) {
-                progressBar.parentNode.removeChild(progressBar);
-            }
-            loadingText.innerHTML = 'Caricamento modello...';
-            alert('Timeout durante il caricamento del modello.');
-        }, 60000); // 1 minuto timeout
+            console.warn('Timeout caricamento - rete lenta o file troppo complesso');
+            // Non nascondere il loader, ma mostra un messaggio di timeout
+            loadingText.innerHTML = `
+                Timeout di rete rilevato per ${modelName}...<br>
+                <small style="color: #ff9800;">La rete sembra lenta. Il caricamento continua in background.</small><br>
+                <small style="color: #2196F3;">Attendere ancora o ricaricare la pagina per riprovare.</small>
+            `;
+            // Cambia il colore della progress bar per indicare il timeout
+            progressFill.style.background = '#ff9800';
+            // Non nascondere il loader per far capire all'utente che sta ancora caricando
+        }, 300000); // 5 minuti timeout
         
         try {
             console.log(`Inizializzazione GLTFLoader per modello: ${filename}`);
@@ -1655,11 +1687,12 @@ class ModelViewer {
                 `compressor/output/${filename}`,
                 (gltf) => {
                     console.log(`Modello ${filename} caricato con successo:`, gltf);
+                    clearTimeout(loadingTimeout);
                     clearInterval(progressInterval);
                     progressFill.style.width = '100%';
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
-                    this.processLoadedModel(object, loadingInfo, null, loadingTimeout, modelName);
+                    this.processLoadedModel(object, loadingInfo, null, null, modelName);
                     // Rilascia la memoria del decoder quando non è più necessario
                     dracoLoader.dispose();
                     
@@ -1698,14 +1731,26 @@ class ModelViewer {
                 },
                 (error) => {
                     console.error(`Errore nel caricamento del modello ${filename}:`, error);
+                    clearTimeout(loadingTimeout);
                     clearInterval(progressInterval);
-                    loading.classList.add('hidden');
-                    instructions.style.display = 'block';
-                    if (progressBar.parentNode) {
-                        progressBar.parentNode.removeChild(progressBar);
-                    }
-                    loadingText.innerHTML = 'Caricamento modello...';
-                    alert(`Errore durante il caricamento del modello ${filename}: ` + error.message);
+                    
+                    // Mostra un messaggio di errore più dettagliato senza nascondere immediatamente il loader
+                    loadingText.innerHTML = `
+                        Errore nel caricamento di ${modelName}<br>
+                        <small style="color: #f44336;">${error.message}</small><br>
+                        <small style="color: #2196F3;">Verificare la connessione di rete e riprovare</small>
+                    `;
+                    progressFill.style.background = '#f44336';
+                    
+                    // Nasconde il loader dopo 5 secondi per dare tempo all'utente di leggere l'errore
+                    setTimeout(() => {
+                        loading.classList.add('hidden');
+                        instructions.style.display = 'block';
+                        if (progressBar.parentNode) {
+                            progressBar.parentNode.removeChild(progressBar);
+                        }
+                        loadingText.innerHTML = 'Caricamento modello...';
+                    }, 5000);
                 }
             );
         } catch (e) {
@@ -1842,6 +1887,28 @@ class ModelViewer {
             });
         } else {
             document.exitFullscreen();
+        }
+    }
+    
+    toggleBackground() {
+        // Inizializza la proprietà se non esiste
+        if (this.isDarkBackground === undefined) {
+            this.isDarkBackground = true; // Default è scuro
+        }
+        
+        this.isDarkBackground = !this.isDarkBackground;
+        
+        // Cambia il colore di sfondo della scena
+        if (this.isDarkBackground) {
+            this.scene.background = new THREE.Color(0x222222); // Scuro
+        } else {
+            this.scene.background = new THREE.Color(0xf0f0f0); // Chiaro
+        }
+        
+        // Aggiorna il testo del pulsante
+        const button = document.getElementById('backgroundBtn');
+        if (button) {
+            button.textContent = this.isDarkBackground ? 'Sfondo Chiaro' : 'Sfondo Scuro';
         }
     }
     
