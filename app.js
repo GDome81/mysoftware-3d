@@ -3265,18 +3265,15 @@ class ModelViewer {
         dynamicModelsContainer.innerHTML = '';
         
         try {
-            // Legge dinamicamente i file dalla cartella compressor/output
-            const response = await fetch('./compressor/output/');
-            const text = await response.text();
+            // Legge dinamicamente i file dal file index.json
+            const response = await fetch('./compressor/output/index.json');
             
-            // Estrae i nomi dei file .glb dalla risposta HTML del server
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
-            const links = doc.querySelectorAll('a[href$=".glb"]');
+            if (!response.ok) {
+                throw new Error(`Errore nel caricamento dell'indice: ${response.status}`);
+            }
             
-            const knownModels = Array.from(links).map(link => {
-                return decodeURIComponent(link.getAttribute('href'));
-            }).filter(filename => filename !== '../' && filename.endsWith('.glb'));
+            const data = await response.json();
+            const knownModels = data.files || [];
             
             // Crea pulsanti per ogni modello
             knownModels.forEach(filename => {
