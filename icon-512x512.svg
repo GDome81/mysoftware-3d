@@ -1,62 +1,60 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bgGradient512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3498db;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2980b9;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="cubeGradient512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
-    </linearGradient>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="4" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
-    </filter>
   </defs>
   
   <!-- Background circle -->
-  <circle cx="256" cy="256" r="240" fill="url(#bgGradient512)" stroke="#fff" stroke-width="8" filter="url(#shadow)"/>
+  <circle cx="256" cy="256" r="240" fill="url(#grad1)"/>
   
-  <!-- 3D Cube representation -->
-  <g transform="translate(256,256)">
-    <!-- Back face -->
-    <polygon points="-70,-70 70,-70 70,70 -70,70" fill="#1565C0" opacity="0.7"/>
+  <!-- 3D network nodes inspired by Enginius -->
+  <g fill="white">
+    <!-- Central node -->
+    <circle cx="256" cy="256" r="32"/>
     
-    <!-- Right face -->
-    <polygon points="70,-70 110,-30 110,110 70,70" fill="url(#cubeGradient512)" filter="url(#shadow)"/>
+    <!-- Surrounding nodes -->
+    <circle cx="256" cy="140" r="22"/>
+    <circle cx="372" cy="256" r="22"/>
+    <circle cx="256" cy="372" r="22"/>
+    <circle cx="140" cy="256" r="22"/>
     
-    <!-- Top face -->
-    <polygon points="-70,-70 -30,-110 110,-110 70,-70" fill="#42A5F5" filter="url(#shadow)"/>
+    <!-- Corner nodes -->
+    <circle cx="340" cy="172" r="16"/>
+    <circle cx="340" cy="340" r="16"/>
+    <circle cx="172" cy="340" r="16"/>
+    <circle cx="172" cy="172" r="16"/>
     
-    <!-- Front face -->
-    <polygon points="-70,-70 70,-70 70,70 -70,70" fill="url(#cubeGradient512)" stroke="#fff" stroke-width="3" filter="url(#shadow)"/>
-    
-    <!-- Wireframe lines -->
-    <line x1="-70" y1="-70" x2="70" y2="-70" stroke="#fff" stroke-width="4" opacity="0.9"/>
-    <line x1="70" y1="-70" x2="70" y2="70" stroke="#fff" stroke-width="4" opacity="0.9"/>
-    <line x1="70" y1="70" x2="-70" y2="70" stroke="#fff" stroke-width="4" opacity="0.9"/>
-    <line x1="-70" y1="70" x2="-70" y2="-70" stroke="#fff" stroke-width="4" opacity="0.9"/>
-    
-    <!-- 3D effect lines -->
-    <line x1="70" y1="-70" x2="110" y2="-30" stroke="#fff" stroke-width="3" opacity="0.7"/>
-    <line x1="70" y1="70" x2="110" y2="110" stroke="#fff" stroke-width="3" opacity="0.7"/>
-    <line x1="-70" y1="-70" x2="-30" y2="-110" stroke="#fff" stroke-width="3" opacity="0.7"/>
-    <line x1="70" y1="-70" x2="110" y2="-30" stroke="#fff" stroke-width="3" opacity="0.7"/>
-    
-    <!-- Inner grid for detail -->
-    <line x1="-35" y1="-70" x2="-35" y2="70" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
-    <line x1="35" y1="-70" x2="35" y2="70" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
-    <line x1="-70" y1="-35" x2="70" y2="-35" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
-    <line x1="-70" y1="35" x2="70" y2="35" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+    <!-- Additional outer nodes -->
+    <circle cx="256" cy="80" r="12"/>
+    <circle cx="432" cy="256" r="12"/>
+    <circle cx="256" cy="432" r="12"/>
+    <circle cx="80" cy="256" r="12"/>
   </g>
   
-  <!-- Touch gesture indicators -->
-  <g transform="translate(400,400)" opacity="0.8">
-    <circle cx="0" cy="0" r="20" fill="#fff" opacity="0.9"/>
-    <circle cx="30" cy="-20" r="15" fill="#fff" opacity="0.7"/>
-    <path d="M 0,0 Q 15,-10 30,-20" stroke="#fff" stroke-width="5" fill="none" opacity="0.6"/>
-    <text x="-60" y="50" font-family="Arial, sans-serif" font-size="24" fill="#fff" opacity="0.8">3D</text>
+  <!-- Connection lines -->
+  <g stroke="white" stroke-width="6" opacity="0.8">
+    <!-- Main connections -->
+    <line x1="256" y1="224" x2="256" y2="162"/>
+    <line x1="288" y1="256" x2="350" y2="256"/>
+    <line x1="256" y1="288" x2="256" y2="350"/>
+    <line x1="224" y1="256" x2="162" y2="256"/>
+    
+    <!-- Diagonal connections -->
+    <line x1="288" y1="224" x2="324" y2="188"/>
+    <line x1="288" y1="288" x2="324" y2="324"/>
+    <line x1="224" y1="288" x2="188" y2="324"/>
+    <line x1="224" y1="224" x2="188" y2="188"/>
+    
+    <!-- Extended connections -->
+    <line x1="256" y1="140" x2="256" y2="92"/>
+    <line x1="372" y1="256" x2="420" y2="256"/>
+    <line x1="256" y1="372" x2="256" y2="420"/>
+    <line x1="140" y1="256" x2="92" y2="256"/>
   </g>
   
-  <!-- FBX text indicator -->
-  <text x="256" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#fff" opacity="0.9">FBX</text>
+  <!-- 3D effect highlights -->
+  <circle cx="256" cy="256" r="32" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="4"/>
+  <circle cx="256" cy="256" r="24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
 </svg>

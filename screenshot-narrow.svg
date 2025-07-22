@@ -2,25 +2,49 @@
   <!-- Sfondo con gradiente -->
   <defs>
     <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#667eea" />
-      <stop offset="100%" stop-color="#764ba2" />
+      <stop offset="0%" stop-color="#3498db" />
+      <stop offset="100%" stop-color="#2980b9" />
+    </linearGradient>
+    <linearGradient id="panel-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.15)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
     </linearGradient>
   </defs>
   <rect width="720" height="1280" fill="url(#bg-gradient)" />
   
-  <!-- Intestazione -->
-  <rect x="0" y="0" width="720" height="60" fill="#2196F3" />
-  <text x="20" y="40" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="white">3D Model Viewer</text>
+  <!-- Intestazione con design Enginius -->
+  <rect x="0" y="0" width="720" height="80" fill="rgba(255,255,255,0.1)" />
+  
+  <!-- Logo area -->
+  <g transform="translate(30,40)">
+    <circle cx="0" cy="0" r="16" fill="white"/>
+    <g fill="#3498db">
+      <circle cx="0" cy="0" r="5"/>
+      <circle cx="0" cy="-12" r="2.5"/>
+      <circle cx="12" cy="0" r="2.5"/>
+      <circle cx="0" cy="12" r="2.5"/>
+      <circle cx="-12" cy="0" r="2.5"/>
+    </g>
+    <g stroke="#3498db" stroke-width="1.5">
+      <line x1="0" y1="-5" x2="0" y2="-9.5"/>
+      <line x1="5" y1="0" x2="9.5" y2="0"/>
+      <line x1="0" y1="5" x2="0" y2="9.5"/>
+      <line x1="-5" y1="0" x2="-9.5" y2="0"/>
+    </g>
+  </g>
+  
+  <text x="60" y="40" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white">3D Model Viewer</text>
+  <text x="60" y="58" font-family="Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.8)">Powered by Enginius</text>
   
   <!-- Pulsanti nell'intestazione -->
-  <rect x="500" y="10" width="60" height="40" rx="5" fill="white" opacity="0.2" />
-  <text x="530" y="35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="white">Reset</text>
+  <rect x="500" y="15" width="60" height="35" rx="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+  <text x="530" y="35" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">Reset</text>
   
-  <rect x="570" y="10" width="60" height="40" rx="5" fill="white" opacity="0.2" />
-  <text x="600" y="35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="white">Load</text>
+  <rect x="570" y="15" width="60" height="35" rx="8" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+  <text x="600" y="35" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">Load</text>
   
-  <rect x="640" y="10" width="40" height="40" rx="5" fill="white" opacity="0.2" />
-  <text x="660" y="35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="white">⛶</text>
+  <rect x="640" y="15" width="40" height="35" rx="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+  <text x="660" y="35" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">⛶</text>
   
   <!-- Area principale con modello 3D -->
   <rect x="20" y="80" width="680" height="680" rx="10" fill="#1a1a2e" />
