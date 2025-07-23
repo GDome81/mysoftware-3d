@@ -5,6 +5,7 @@ class ModelViewer {
         this.renderer = null;
         this.controls = null;
         this.currentModel = null;
+        this.isCurrentModelCompressed = false; // Traccia se il modello corrente è compresso
         this.isWireframe = false;
         this.isDarkBackground = false; // Default è sfondo chiaro
         this.lastMemoryCheck = 0;
@@ -1298,6 +1299,11 @@ class ModelViewer {
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
                     console.log('Oggetto estratto da gltf:', object);
+                    
+                    // Rileva se il modello è compresso
+                    this.isCurrentModelCompressed = this.detectDracoCompression(gltf);
+                    console.log('Modello compresso rilevato:', this.isCurrentModelCompressed);
+                    
                     this.processLoadedModel(object, loadingInfo, url, loadingTimeout, 'GLTF/GLB');
                     // Rilascia la memoria del decoder quando non è più necessario
                     dracoLoader.dispose();
@@ -1318,7 +1324,7 @@ class ModelViewer {
         }
     }
     
-    loadExampleGlbModel() {
+    async loadExampleGlbModel() {
         const loading = document.getElementById('loading');
         const instructions = document.getElementById('instructions');
         
@@ -1357,13 +1363,27 @@ class ModelViewer {
         // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
         this.clickableObjects = [];
         
+        // Ottieni la dimensione reale del file
+        let actualFileSizeMB = 5; // Fallback
+        try {
+            const response = await fetch('disassembled_v8_engine_block.glb', { method: 'HEAD' });
+            if (response.ok) {
+                const contentLength = response.headers.get('content-length');
+                if (contentLength) {
+                    actualFileSizeMB = parseInt(contentLength) / (1024 * 1024);
+                }
+            }
+        } catch (error) {
+            console.warn('Impossibile ottenere la dimensione del file, usando valore stimato:', error);
+        }
+
         const loadingInfo = {
             loading,
             instructions,
             loadingText,
             progressBar,
             progressFill,
-            fileSizeMB: 5 // Dimensione stimata del file
+            fileSizeMB: actualFileSizeMB
         };
         
         // Add timeout for loading
@@ -1416,6 +1436,11 @@ class ModelViewer {
                     progressFill.style.width = '100%';
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
+                    
+                    // Rileva se il modello è compresso (il motore V8 di esempio potrebbe essere compresso)
+                    this.isCurrentModelCompressed = this.detectDracoCompression(gltf);
+                    console.log('Modello compresso rilevato:', this.isCurrentModelCompressed);
+                    
                     this.processLoadedModel(object, loadingInfo, null, loadingTimeout, 'Motore V8');
                     // Rilascia la memoria del decoder quando non è più necessario
                     dracoLoader.dispose();
@@ -1493,7 +1518,7 @@ class ModelViewer {
         }
     }
     
-    loadCompressorModel(filename) {
+    async loadCompressorModel(filename) {
         const loading = document.getElementById('loading');
         const instructions = document.getElementById('instructions');
         
@@ -1533,13 +1558,27 @@ class ModelViewer {
         // Resetta la lista degli oggetti cliccabili quando si carica un nuovo modello
         this.clickableObjects = [];
         
+        // Ottieni la dimensione reale del file
+        let actualFileSizeMB = 10; // Fallback
+        try {
+            const response = await fetch(`compressor/output/${filename}`, { method: 'HEAD' });
+            if (response.ok) {
+                const contentLength = response.headers.get('content-length');
+                if (contentLength) {
+                    actualFileSizeMB = parseInt(contentLength) / (1024 * 1024);
+                }
+            }
+        } catch (error) {
+            console.warn('Impossibile ottenere la dimensione del file, usando valore stimato:', error);
+        }
+
         const loadingInfo = {
             loading,
             instructions,
             loadingText,
             progressBar,
             progressFill,
-            fileSizeMB: 10 // Dimensione stimata del file
+            fileSizeMB: actualFileSizeMB
         };
         
         // Add timeout for loading (increased to 5 minutes for slow networks)
@@ -1595,6 +1634,11 @@ class ModelViewer {
                     progressFill.style.width = '100%';
                     // GLTF loader returns a different structure than FBX and OBJ loaders
                     const object = gltf.scene || gltf.scenes[0];
+                    
+                    // I modelli dalla cartella compressor/output sono sempre compressi
+                    this.isCurrentModelCompressed = true;
+                    console.log('Modello compresso dalla cartella compressor/output');
+                    
                     this.processLoadedModel(object, loadingInfo, null, null, modelName);
                     // Rilascia la memoria del decoder quando non è più necessario
                     dracoLoader.dispose();
@@ -2706,6 +2750,16 @@ class ModelViewer {
         
         this.raycaster.setFromCamera(this.mouse, this.camera);
         
+        // Per modelli compressi, usa un approccio basato sulla gerarchia
+        if (this.isCurrentModelCompressed && this.modelLayers && Object.keys(this.modelLayers).length > 0) {
+            this.checkIntersectionsWithHierarchy();
+        } else {
+            // Usa il metodo tradizionale per modelli non compressi
+            this.checkIntersectionsWithRaycaster();
+        }
+    }
+    
+    checkIntersectionsWithRaycaster() {
         // Trova intersezioni con oggetti cliccabili
         const intersects = this.raycaster.intersectObjects(this.clickableObjects, true);
         
@@ -2751,6 +2805,64 @@ class ModelViewer {
                 }
             } else {
                 // Nessun oggetto cliccabile trovato nelle intersezioni
+                if (this.hoveredObject) {
+                    this.onObjectLeave(this.hoveredObject);
+                    this.hoveredObject = null;
+                }
+                this.renderer.domElement.style.cursor = 'auto';
+            }
+        } else {
+            // Nessuna intersezione
+            if (this.hoveredObject) {
+                this.onObjectLeave(this.hoveredObject);
+                this.hoveredObject = null;
+            }
+            this.renderer.domElement.style.cursor = 'auto';
+        }
+    }
+    
+    checkIntersectionsWithHierarchy() {
+        // Per modelli compressi, usa l'intero modello per il raycaster
+        const intersects = this.raycaster.intersectObjects([this.currentModel], true);
+        
+        if (intersects.length > 0) {
+            const intersectionPoint = intersects[0].point;
+            let closestObject = null;
+            let closestDistance = Infinity;
+            
+            // Cerca l'oggetto cliccabile più vicino al punto di intersezione
+            this.clickableObjects.forEach((obj, index) => {
+                if (obj.userData && obj.userData.isClickable && obj.visible) {
+                    // Calcola la distanza dal punto di intersezione al centro dell'oggetto
+                    const objBox = new THREE.Box3().setFromObject(obj);
+                    const objCenter = objBox.getCenter(new THREE.Vector3());
+                    const distance = intersectionPoint.distanceTo(objCenter);
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestObject = obj;
+                    }
+                }
+            });
+            
+            if (closestObject) {
+                // Se abbiamo trovato un oggetto cliccabile
+                if (this.hoveredObject !== closestObject) {
+                    // Se stiamo entrando in un nuovo oggetto
+                    if (this.hoveredObject) {
+                        // Reset dell'oggetto precedente
+                        this.onObjectLeave(this.hoveredObject);
+                    }
+                    
+                    // Imposta il nuovo oggetto come hoveredObject
+                    this.hoveredObject = closestObject;
+                    this.onObjectEnter(closestObject);
+                }
+                
+                // Cambia il cursore per indicare che l'oggetto è cliccabile
+                this.renderer.domElement.style.cursor = 'pointer';
+            } else {
+                // Nessun oggetto cliccabile trovato
                 if (this.hoveredObject) {
                     this.onObjectLeave(this.hoveredObject);
                     this.hoveredObject = null;
@@ -3521,6 +3633,35 @@ class ModelViewer {
         
         this.controls.update();
         this.renderer.render(this.scene, this.camera);
+    }
+    
+    // Metodo per rilevare se un modello GLTF usa la compressione Draco
+    detectDracoCompression(gltf) {
+        if (!gltf || !gltf.parser || !gltf.parser.json) {
+            return false;
+        }
+        
+        const json = gltf.parser.json;
+        
+        // Controlla se ci sono estensioni Draco
+        if (json.extensionsUsed && json.extensionsUsed.includes('KHR_draco_mesh_compression')) {
+            return true;
+        }
+        
+        // Controlla se ci sono primitive con compressione Draco
+        if (json.meshes) {
+            for (const mesh of json.meshes) {
+                if (mesh.primitives) {
+                    for (const primitive of mesh.primitives) {
+                        if (primitive.extensions && primitive.extensions['KHR_draco_mesh_compression']) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
 }
 

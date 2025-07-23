@@ -1,4 +1,4 @@
-const CACHE_VERSION = '1.0.1';
+const CACHE_VERSION = '1.0.2';
 const CACHE_NAME = `model-viewer-v${CACHE_VERSION}`;
 const STATIC_CACHE = `static-cache-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-cache-v${CACHE_VERSION}`;
@@ -15,15 +15,8 @@ const STATIC_ASSETS = [
   './cache-buster.js',
   './manifest.json',
   './browserconfig.xml',
-  './icon-192x192.svg',
+  './icon-192x192.png',
   './icon-512x512.svg',
-  './splash-640x1136.png',
-  './splash-750x1334.png',
-  './splash-1242x2208.png',
-  './splash-1125x2436.png',
-  './splash-1536x2048.png',
-  './splash-1668x2224.png',
-  './splash-2048x2732.png',
   './screenshot-wide.svg',
   './screenshot-narrow.svg',
   './disassembled_v8_engine_block.glb'
