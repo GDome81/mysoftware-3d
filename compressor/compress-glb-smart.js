@@ -23,24 +23,31 @@ if (glbFiles.length === 0) {
 glbFiles.forEach(file => {
     const inputPath = path.join(INPUT_DIR, file);
     const outputPath = path.join(OUTPUT_DIR, file);
+    const fileSizeMB = fs.statSync(inputPath).size / (1024 * 1024);
+    const forceDraco = fileSizeMB > 300; // ad es. 300 MB
 
     try {
         console.log(`🔍 Analisi: ${file}...`);
-        const inspectOutput = execSync(`gltf-transform inspect "${inputPath}"`, { encoding: "utf-8" });
 
-        const match = inspectOutput.match(/Buffers\s*:\s*(\d+(\.\d+)?)\s*MB/);
-        const bufferSizeMB = match ? parseFloat(match[1]) : 0;
+        let compressDraco = false;
 
-        const compressDraco = bufferSizeMB >= 10;
+        if (forceDraco) {
+            console.log("⚠️ File molto grande, forzo compressione DRACO senza inspect.");
+            compressDraco = true;
+        } else {
+            const inspectOutput = execSync(`gltf-transform inspect "${inputPath}"`, { encoding: "utf-8" });
+            const match = inspectOutput.match(/Buffers\\s*:\\s*(\\d+(\\.\\d+)?)\\s*MB/);
+            const bufferSizeMB = match ? parseFloat(match[1]) : 0;
+            compressDraco = bufferSizeMB >= 10;
+        }
+
         const compressOption = compressDraco ? "--compress=draco --join=false" : "";
 
         console.log(`⚙️ Ottimizzazione (${compressDraco ? "con" : "senza"} DRACO): ${file}...`);
         execSync(`gltf-transform optimize "${inputPath}" "${outputPath}" ${compressOption} --texture-compress=webp`, { stdio: "inherit" });
 
-        const originalSize = fs.statSync(inputPath).size / (1024 * 1024);
         const optimizedSize = fs.statSync(outputPath).size / (1024 * 1024);
-
-        console.log(`✅ ${file}: ${originalSize.toFixed(2)} MB → ${optimizedSize.toFixed(2)} MB\n`);
+        console.log(`✅ ${file}: ${fileSizeMB.toFixed(2)} MB → ${optimizedSize.toFixed(2)} MB\\n`);
     } catch (err) {
         console.error(`❌ Errore durante l'elaborazione di ${file}`, err);
     }

@@ -184,7 +184,11 @@ class ModelViewer {
         showOnlyBtn.title = 'Mostra solo questo livello';
         showOnlyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.showOnlyLayer(layerObjects[0]); // Usa il primo oggetto del layer come riferimento
+            if (layerObjects && layerObjects.length > 0) {
+                this.showOnlyLayer(layerObjects[0]); // Usa il primo oggetto del layer come riferimento
+            } else {
+                console.warn('Nessun oggetto trovato nel layer:', layerName);
+            }
         });
         
         layerActions.appendChild(showOnlyBtn);
@@ -3469,6 +3473,7 @@ class ModelViewer {
         }, 2000);
     }
     
+    
     // Seleziona un oggetto (simula il click)
     selectObject(object) {
         if (!object) return;
@@ -3581,6 +3586,27 @@ class ModelViewer {
             return;
         }
         
+        // Deseleziona solo le checkbox degli altri layer (non quella del layer target)
+        const hierarchyTree = document.getElementById('hierarchyTree');
+        if (!hierarchyTree) {
+            console.warn('Elemento hierarchyTree non trovato');
+            return;
+        }
+        const layerNodes = hierarchyTree.querySelectorAll('.layer-node');
+        layerNodes.forEach(node => {
+            const layerNameSpan = node.querySelector('.layer-name');
+            const checkbox = node.querySelector('.layer-checkbox');
+            if (layerNameSpan && checkbox) {
+                if (layerNameSpan.textContent === targetLayerName) {
+                    // Mantieni selezionata la checkbox del layer target
+                    checkbox.checked = true;
+                } else {
+                    // Deseleziona le checkbox degli altri layer
+                    checkbox.checked = false;
+                }
+            }
+        });
+        
         // Nascondi tutti gli oggetti di tutti i layer
         Object.values(this.modelLayers).forEach(layerObjects => {
             layerObjects.forEach(obj => {
@@ -3599,6 +3625,12 @@ class ModelViewer {
     // Ripristina la visibilità di tutti i livelli
     showAllLayers() {
         if (!this.currentModel) return;
+        
+        // Riseleziona tutte le checkbox dei layer
+        const layerCheckboxes = document.querySelectorAll('.layer-checkbox');
+        layerCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
         
         Object.values(this.modelLayers).forEach(layerObjects => {
             layerObjects.forEach(obj => {

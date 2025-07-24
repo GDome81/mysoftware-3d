@@ -1,3 +1,8 @@
 compressor/input/*
+compressor/processed/*
 converter/input/*
 converter/output/*
+converter/processed/*
+compressor/output/Macchinari complessi esempio.glb
+compressor/output/Macchinari.glb
+compressor/output/modello motore.glb
