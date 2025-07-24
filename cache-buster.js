@@ -3,7 +3,7 @@
     'use strict';
     
     // Versione dell'app - incrementa questo numero quando fai deploy
-    const APP_VERSION = '1.0.4';
+    const APP_VERSION = '1.1.0';
     
     // Funzione per aggiungere timestamp ai file
     function addCacheBuster() {

@@ -52,6 +52,107 @@ class ModelViewer {
         });
         
         this.updateHierarchyUI();
+        
+        // Applica ottimizzazione automatica per modelli complessi
+        this.applyComplexModelOptimization();
+    }
+    
+    // Funzione per ottimizzare automaticamente modelli complessi
+    applyComplexModelOptimization() {
+        const totalLayers = Object.keys(this.modelLayers).length;
+        const totalObjects = Object.values(this.modelLayers).reduce((sum, layer) => sum + layer.length, 0);
+        
+        // Determina se il modello è complesso (molti livelli E molti oggetti)
+        const isComplexModel = totalLayers >= 5 && totalObjects >= 100;
+        
+        if (isComplexModel) {
+            console.log(`Modello complesso rilevato: ${totalLayers} livelli, ${totalObjects} oggetti totali. Applicando ottimizzazione automatica...`);
+            
+            // Calcola il numero di oggetti cliccabili per ogni livello
+            const layerStats = Object.entries(this.modelLayers).map(([layerName, objects]) => {
+                const clickableCount = objects.filter(obj => this.clickableObjects.includes(obj)).length;
+                return {
+                    name: layerName,
+                    objects: objects,
+                    totalCount: objects.length,
+                    clickableCount: clickableCount,
+                    score: clickableCount * 2 + objects.length // Priorità agli oggetti cliccabili
+                };
+            });
+            
+            // Ordina i livelli per importanza (più oggetti cliccabili = più importante)
+            layerStats.sort((a, b) => b.score - a.score);
+            
+            // Mantieni visibili solo i primi 2 livelli più importanti
+            const layersToKeepVisible = layerStats.slice(0, 2);
+            const layersToHide = layerStats.slice(2);
+            
+            console.log('Livelli che rimarranno visibili:', layersToKeepVisible.map(l => `${l.name} (${l.clickableCount}/${l.totalCount})`));
+            console.log('Livelli che verranno nascosti:', layersToHide.map(l => `${l.name} (${l.clickableCount}/${l.totalCount})`));
+            
+            // Nascondi i livelli meno importanti
+            layersToHide.forEach(layerStat => {
+                this.toggleLayerVisibility(layerStat.name, false);
+            });
+            
+            // Aggiorna l'UI per riflettere i cambiamenti
+            this.updateLayerCheckboxes();
+            
+            // Mostra un messaggio informativo all'utente
+            const hiddenLayersCount = layersToHide.length;
+            if (hiddenLayersCount > 0) {
+                console.log(`Ottimizzazione applicata: ${hiddenLayersCount} livelli nascosti per migliorare le prestazioni.`);
+                
+                // Mostra un toast informativo (opzionale)
+                this.showOptimizationToast(hiddenLayersCount, layersToKeepVisible.length);
+            }
+        }
+    }
+    
+    // Funzione per aggiornare le checkbox dei livelli nell'UI
+    updateLayerCheckboxes() {
+        Object.entries(this.modelLayers).forEach(([layerName, objects]) => {
+            const isVisible = objects.length > 0 && objects[0].visible;
+            const checkbox = document.querySelector(`input[data-layer="${layerName}"]`);
+            if (checkbox) {
+                checkbox.checked = isVisible;
+            }
+        });
+    }
+    
+    // Funzione per mostrare un toast informativo sull'ottimizzazione
+    showOptimizationToast(hiddenCount, visibleCount) {
+        const toast = document.createElement('div');
+        toast.className = 'optimization-toast';
+        toast.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: #FF9800;
+                color: white;
+                padding: 12px 16px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                max-width: 300px;
+                font-size: 0.9rem;
+                line-height: 1.4;
+            ">
+                <strong>🚀 Ottimizzazione Automatica</strong><br>
+                Nascosti ${hiddenCount} livelli per migliorare le prestazioni.<br>
+                <small>Visibili i ${visibleCount} livelli principali. Usa il menu Gerarchia per mostrare tutti i livelli.</small>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Rimuovi il toast dopo 5 secondi
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
     }
     
     extractLayerName(objectName) {
@@ -148,7 +249,10 @@ class ModelViewer {
         const layerCheckbox = document.createElement('input');
         layerCheckbox.type = 'checkbox';
         layerCheckbox.className = 'layer-checkbox';
-        layerCheckbox.checked = true;
+        layerCheckbox.setAttribute('data-layer', layerName);
+        // Controlla lo stato effettivo di visibilità del primo oggetto del layer
+        const isLayerVisible = layerObjects.length > 0 && layerObjects[0].visible;
+        layerCheckbox.checked = isLayerVisible;
         layerCheckbox.addEventListener('change', (e) => {
             this.toggleLayerVisibility(layerName, e.target.checked);
         });
