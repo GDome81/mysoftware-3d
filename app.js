@@ -580,6 +580,17 @@ class ModelViewer {
                     closeAllMenus();
                 };
             }
+            
+            // Gestione del pulsante Statistiche Modello
+            const modelStatsBtn = document.getElementById('modelStatsBtn');
+            if (modelStatsBtn) {
+                modelStatsBtn.onclick = (e) => {
+                    console.log('Click su Statistiche Modello');
+                    e.stopPropagation();
+                    this.showModelStatistics();
+                    closeAllMenus();
+                };
+            }
         } else {
             console.error('Elementi menu Impostazioni non trovati');
         }
@@ -1916,6 +1927,97 @@ class ModelViewer {
         }
         
         console.log('Scena svuotata con successo');
+    }
+    
+    // Funzione per mostrare le statistiche del modello
+    showModelStatistics() {
+        if (!this.currentModel) {
+            alert('Nessun modello caricato. Carica prima un modello per visualizzare le statistiche.');
+            return;
+        }
+        
+        console.log('Calcolando statistiche del modello...');
+        
+        let totalVertices = 0;
+        let totalFaces = 0;
+        let totalMeshes = 0;
+        let totalNodes = 0;
+        let totalLayers = Object.keys(this.modelLayers).length;
+        let totalMaterials = new Set();
+        let totalTextures = new Set();
+        
+        // Attraversa tutti gli oggetti del modello per calcolare le statistiche
+        this.currentModel.traverse((child) => {
+            totalNodes++;
+            
+            if (child.isMesh) {
+                totalMeshes++;
+                
+                if (child.geometry) {
+                    // Conta i vertici
+                    if (child.geometry.attributes.position) {
+                        totalVertices += child.geometry.attributes.position.count;
+                    }
+                    
+                    // Conta le facce (triangoli)
+                    if (child.geometry.index) {
+                        totalFaces += child.geometry.index.count / 3;
+                    } else if (child.geometry.attributes.position) {
+                        totalFaces += child.geometry.attributes.position.count / 3;
+                    }
+                }
+                
+                // Conta i materiali unici
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => {
+                            if (mat.uuid) totalMaterials.add(mat.uuid);
+                            // Conta le texture
+                            if (mat.map) totalTextures.add(mat.map.uuid);
+                            if (mat.normalMap) totalTextures.add(mat.normalMap.uuid);
+                            if (mat.roughnessMap) totalTextures.add(mat.roughnessMap.uuid);
+                            if (mat.metalnessMap) totalTextures.add(mat.metalnessMap.uuid);
+                        });
+                    } else {
+                        if (child.material.uuid) totalMaterials.add(child.material.uuid);
+                        // Conta le texture
+                        if (child.material.map) totalTextures.add(child.material.map.uuid);
+                        if (child.material.normalMap) totalTextures.add(child.material.normalMap.uuid);
+                        if (child.material.roughnessMap) totalTextures.add(child.material.roughnessMap.uuid);
+                        if (child.material.metalnessMap) totalTextures.add(child.material.metalnessMap.uuid);
+                    }
+                }
+            }
+        });
+        
+        // Calcola la dimensione del modello in memoria (approssimativa)
+        const modelSizeMB = this.modelSizeMB || 0;
+        
+        // Crea il messaggio con le statistiche
+        const statsMessage = `📊 STATISTICHE DEL MODELLO 3D\n\n` +
+            `🔺 Poligoni (Facce): ${totalFaces.toLocaleString()}\n` +
+            `📐 Vertici: ${totalVertices.toLocaleString()}\n` +
+            `🎭 Mesh: ${totalMeshes.toLocaleString()}\n` +
+            `🌳 Nodi totali: ${totalNodes.toLocaleString()}\n` +
+            `📁 Livelli/Layer: ${totalLayers}\n` +
+            `🎨 Materiali: ${totalMaterials.size}\n` +
+            `🖼️ Texture: ${totalTextures.size}\n` +
+            `💾 Dimensione file: ${modelSizeMB > 0 ? modelSizeMB.toFixed(1) + ' MB' : 'Non disponibile'}`;
+        
+        // Mostra le statistiche in un alert
+        alert(statsMessage);
+        
+        // Log delle statistiche nella console per debug
+        console.log('Statistiche modello:', {
+            poligoni: totalFaces,
+            vertici: totalVertices,
+            mesh: totalMeshes,
+            nodi: totalNodes,
+            livelli: totalLayers,
+            materiali: totalMaterials.size,
+            texture: totalTextures.size,
+            dimensioneMB: modelSizeMB
+        });
     }
     
     onWindowResize() {
