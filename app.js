@@ -925,7 +925,7 @@ class ModelViewer {
         progressFill.style.cssText = `
             width: 0%;
             height: 100%;
-            background: #2196F3;
+            background: #D4AF37;
             transition: width 0.3s ease;
         `;
         progressBar.appendChild(progressFill);
@@ -1468,7 +1468,7 @@ class ModelViewer {
         progressFill.style.cssText = `
             width: 0%;
             height: 100%;
-            background: #2196F3;
+            background: #D4AF37;
             transition: width 0.3s ease;
         `;
         progressBar.appendChild(progressFill);
@@ -1619,7 +1619,7 @@ class ModelViewer {
             loadingText.innerHTML = `
                 Errore di inizializzazione per ${modelName}<br>
                 <small style="color: #f44336;">${e.message}</small><br>
-                <small style="color: #2196F3;">Verificare il supporto WebGL del browser</small>
+                <small style="color: #D4AF37;">Verificare il supporto WebGL del browser</small>
             `;
             if (progressBar.parentNode) {
                 progressFill.style.background = '#f44336';
@@ -1663,7 +1663,7 @@ class ModelViewer {
         progressFill.style.cssText = `
             width: 0%;
             height: 100%;
-            background: #2196F3;
+            background: #D4AF37;
             transition: width 0.3s ease;
         `;
         progressBar.appendChild(progressFill);
@@ -1707,7 +1707,7 @@ class ModelViewer {
             loadingText.innerHTML = `
                 Timeout di rete rilevato per ${modelName}...<br>
                 <small style="color: #ff9800;">La rete sembra lenta. Il caricamento continua in background.</small><br>
-                <small style="color: #2196F3;">Attendere ancora o ricaricare la pagina per riprovare.</small>
+                <small style="color: #D4AF37;">Attendere ancora o ricaricare la pagina per riprovare.</small>
             `;
             // Cambia il colore della progress bar per indicare il timeout
             progressFill.style.background = '#ff9800';
@@ -1804,7 +1804,7 @@ class ModelViewer {
                     loadingText.innerHTML = `
                         Errore nel caricamento di ${modelName}<br>
                         <small style="color: #f44336;">${error.message}</small><br>
-                        <small style="color: #2196F3;">Verificare la connessione di rete e riprovare</small>
+                        <small style="color: #D4AF37;">Verificare la connessione di rete e riprovare</small>
                     `;
                     progressFill.style.background = '#f44336';
                     

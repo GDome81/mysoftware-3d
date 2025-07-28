@@ -5,10 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Offline - 3D Model Viewer</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2196F3">
+    <meta name="theme-color" content="#0D3B66">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #0D3B66;
+            --accent-color: #D4AF37;
+            --background-start: #0D3B66;
+            --background-end: #021527;
+            --font-primary: 'Poppins', sans-serif;
+            --font-heading: 'Playfair Display', serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: var(--font-primary);
             margin: 0;
             padding: 0;
             display: flex;
@@ -16,22 +28,24 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background-color: #f5f5f5;
-            color: #333;
+            background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+            color: #EEE;
             text-align: center;
         }
         
         .offline-container {
             max-width: 90%;
             padding: 20px;
-            background-color: white;
+            background-color: rgba(255,255,255,0.9);
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             margin: 20px;
+            color: var(--primary-color);
         }
         
         h1 {
-            color: #2196F3;
+            font-family: var(--font-heading);
+            color: var(--accent-color);
             margin-bottom: 10px;
         }
         
@@ -47,8 +61,8 @@
         }
         
         button {
-            background-color: #2196F3;
-            color: white;
+            background-color: var(--accent-color);
+            color: var(--primary-color);
             border: none;
             padding: 12px 24px;
             border-radius: 4px;
@@ -59,7 +73,7 @@
         }
         
         button:hover {
-            background-color: #1976D2;
+            background-color: #b68b2e;
         }
         
         @media (max-width: 768px) {

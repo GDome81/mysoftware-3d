@@ -98,7 +98,7 @@ class MobileEnhancer {
                 bottom: 0;
                 left: 0;
                 right: 0;
-                background-color: #2196F3;
+                background-color: #D4AF37;
                 color: white;
                 display: flex;
                 justify-content: space-between;
@@ -114,7 +114,7 @@ class MobileEnhancer {
             }
             .install-banner button {
                 background-color: white;
-                color: #2196F3;
+                color: #0D3B66;
                 border: none;
                 padding: 8px 16px;
                 border-radius: 4px;
