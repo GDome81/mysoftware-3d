@@ -199,12 +199,14 @@ async function networkFirstStrategy(request, cacheName) {
   }
   
   // If both network and cache fail, return a custom offline response
-  if (request.headers.get('accept').includes('text/html')) {
+  const acceptHeader = request.headers.get('accept') || '';
+
+  if (acceptHeader.includes('text/html')) {
     return caches.match('/offline.html');
   }
-  
+
   // For images, return offline image
-  if (request.headers.get('accept').includes('image/')) {
+  if (acceptHeader.includes('image/')) {
     return caches.match('/offline.svg');
   }
   
